@@ -1,0 +1,18 @@
+{
+  "root": true,
+  "extends": [
+    "@nuxt/eslint-config"
+  ],
+  "rules": {
+    "indent": ["error", 2, {
+      "ignoredNodes": ["TemplateLiteral"]
+    }],
+    "vue/html-indent": ["error", 2, {
+      "attribute": 1,
+      "baseIndent": 1,
+      "closeBracket": 0,
+      "alignAttributesVertically": true,
+      "ignores": []
+    }]
+  }
+}

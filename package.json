@@ -10,8 +10,24 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/ui": "^2.19.2",
+    "@pinia/nuxt": "^0.8.0",
+    "dayjs": "^1.11.13",
     "nuxt": "^3.14.1592",
+    "pinia": "^2.2.8",
     "vue": "latest",
+    "vue-i18n": "^10.0.5",
     "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@nuxt/eslint-config": "^0.7.2",
+    "@nuxtjs/eslint-config": "^12.0.0",
+    "@nuxtjs/eslint-module": "^4.1.0"
+  },
+  "overrides": {
+    "vue": "latest"
+  },
+  "engines": {
+    "node": ">=20.18.0"
   }
 }

@@ -111,14 +111,22 @@ export const useMain = defineStore('main', {
         const path = `/measurements.json`;
         const measurements = await api.get(path)
         this.measurements = []
+        const timestamps = {}
         for (let i = 0; i < Object.values(measurements).length; i++) {
           try {
             const measurement = Object.values(measurements)[i]
-            this.measurements.push(JSON.parse(await decryptData(measurement.encryptedData, this.encryptionKey, measurement.iv)))
+            const decryptedMeasurement = JSON.parse(await decryptData(measurement.encryptedData, this.encryptionKey, measurement.iv))
+            if (!Object.hasOwnProperty.call(timestamps, decryptedMeasurement.id)) {
+              timestamps[decryptedMeasurement.id] = decryptedMeasurement
+              this.measurements.push(decryptedMeasurement)
+            } else if (new Date(decryptedMeasurement.timestamp) > new Date(timestamps[decryptedMeasurement.id].timestamp)){
+              timestamps[decryptedMeasurement.id] = decryptedMeasurement
+            }
           } catch (err) {
             console.log(err.message)
           }
         }
+        this.measurements = Object.values(timestamps)
         this.timestamp = new Date().toISOString()
         this.stopLoading('measurements')
       } catch (err) {

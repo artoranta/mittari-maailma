@@ -71,6 +71,17 @@ export default {
     if (this.isLoggedIn) {
       const router = useRouter()
       router.push('/')
+    } else {
+      const route = useRoute()
+      if (Object.hasOwnProperty.call(route.query, 'username')) {
+        this.username = route.query.username
+      }
+      if (Object.hasOwnProperty.call(route.query, 'password')) {
+        this.password = route.query.password
+      }
+      if (this.username && this.password) {
+        this.login()
+      }
     }
   },
   mounted() {},

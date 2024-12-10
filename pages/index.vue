@@ -43,9 +43,8 @@ export default {
   },
   watch: {},
   created () {
-    if (this.isLoggedIn) {
-      const main = useMain()
-      main.getMeasurements()
+    if (this.isLoggedIn && this.measurements.length === 0) {
+      this.getMeasurements()
     }
   },
   mounted() {},
@@ -54,10 +53,10 @@ export default {
     formatDate(string) {
       return dayjs(string).locale('fi').format('D.M.YYYY [klo] HH:mm.ss')
     },
-    getMeasurements(url) {
+    getMeasurements() {
       try {
         const main = useMain()
-        main.getMeasurements(url)
+        main.getMeasurements()
       } catch (err) {
         console.log(err.message)
       }
@@ -70,6 +69,7 @@ export default {
 <style>
 .measurement-card {
   position: relative;
+  min-height: 360px;
 }
 .measurement {
   font-size: 13px;

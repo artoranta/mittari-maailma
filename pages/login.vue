@@ -67,10 +67,12 @@ export default {
     })
   },
   watch: {},
-  created () {
+  async created () {
     if (this.isLoggedIn) {
+      const main = useMain()
+      await main.getMeasurements()
       const router = useRouter()
-      router.push('/')
+      await router.push('/')
     } else {
       const route = useRoute()
       if (Object.hasOwnProperty.call(route.query, 'username')) {
@@ -80,7 +82,7 @@ export default {
         this.password = route.query.password
       }
       if (this.username && this.password) {
-        this.login()
+        await this.login()
       }
     }
   },

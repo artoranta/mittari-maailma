@@ -71,21 +71,23 @@ export const useMain = defineStore('main', {
         this.encryptionKey = encryptionKey || this.encryptionKey
         this.url = url || this.url
         const isValidBase64 = base64regex.test(this.url)
+        const main = useMain()
         if (isValidBase64) {
-          const main = useMain()
           await main.getUser()
         }
         if (!this.user) {
           this.encryptionKey = null
           this.errorMessage = 'Invalid credentials'
+          this.stopLoading('login')
         } else {
           if (process.client) {
             window.localStorage.setItem('encryptionKey', this.encryptionKey)
             window.localStorage.setItem('url', this.url)
           }
+          await main.getMeasurements()
+          this.stopLoading('login')
           callback()
         }
-        this.stopLoading('login')
       } catch (err) {
         console.log(err.message)
         this.encryptionKey = null
@@ -102,7 +104,7 @@ export const useMain = defineStore('main', {
       this.encryptionKey = null
       this.url = null
       this.user = null
-      this.measurements = {}
+      this.measurements = []
     },
     async getMeasurements() {
       try {
@@ -110,23 +112,25 @@ export const useMain = defineStore('main', {
         const api = mande(atob(this.url))
         const path = `/measurements.json`;
         const measurements = await api.get(path)
-        this.measurements = []
         const timestamps = {}
+        const offsets = {
+          '06696698': 82.502,
+          '06697364': 176.819
+        }
         for (let i = 0; i < Object.values(measurements).length; i++) {
           try {
             const measurement = Object.values(measurements)[i]
             const decryptedMeasurement = JSON.parse(await decryptData(measurement.encryptedData, this.encryptionKey, measurement.iv))
             if (!Object.hasOwnProperty.call(timestamps, decryptedMeasurement.id)) {
-              timestamps[decryptedMeasurement.id] = decryptedMeasurement
-              this.measurements.push(decryptedMeasurement)
+              timestamps[decryptedMeasurement.id] = { ...decryptedMeasurement, total_m3: (Math.round((decryptedMeasurement.total_m3 + (offsets[decryptedMeasurement.id] || 0)) * 1000) / 1000).toFixed(3) }
             } else if (new Date(decryptedMeasurement.timestamp) > new Date(timestamps[decryptedMeasurement.id].timestamp)){
-              timestamps[decryptedMeasurement.id] = decryptedMeasurement
+              timestamps[decryptedMeasurement.id] = { ...decryptedMeasurement, total_m3: (Math.round((decryptedMeasurement.total_m3 + (offsets[decryptedMeasurement.id] || 0)) * 1000) / 1000).toFixed(3) }
             }
           } catch (err) {
             console.log(err.message)
           }
         }
-        this.measurements = Object.values(timestamps)
+        this.measurements = [...Object.values(timestamps).map(i => ({ id: i.id, media: i.media, meter: i.meter, total_m3: i.total_m3, timestamp: i.timestamp }))]
         this.timestamp = new Date().toISOString()
         this.stopLoading('measurements')
       } catch (err) {

@@ -3,9 +3,17 @@ export default {
   _links: {
     home: 'Kotinäkymä',
     charts: 'Graafit',
-    profile: 'Käyttäjä'
+    logout: 'Kirjaudu ulos'
   },
   _index: {
     refresh: 'Päivitä'
+  },
+  _login: {
+    username: 'Käyttäjätunnus',
+    password: 'Salasana',
+    login: 'Kirjaudu'
+  },
+  _logout: {
+    logout: 'Uloskirjautuminen'
   }
 }

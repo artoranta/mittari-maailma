@@ -5,7 +5,11 @@
 </template>
 
 <style>
+body {
+  height: 100vh;
+}
 #__nuxt {
-  height: calc(100vh - 49px);
+  height: 100%;
+  background-color: #fafafa;
 }
 </style>

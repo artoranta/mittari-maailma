@@ -1,6 +1,6 @@
 <template>
-  <UCard>
-    <div class="login-container">
+  <UCard class="login-container">
+    <div class="login-card-body">
       <div class="icon-container">
         <UIcon
           name="i-heroicons-home-modern"
@@ -70,7 +70,7 @@ export default {
   async created () {
     if (this.isLoggedIn) {
       const main = useMain()
-      await main.getMeasurements()
+      await main.getLatest()
       const router = useRouter()
       await router.push('/')
     } else {
@@ -110,6 +110,10 @@ export default {
 }
 
 .login-container {
+  margin-top: 10rem;
+}
+
+.login-card-body {
   display: flex;
   gap: 1rem;
   flex-direction: column;

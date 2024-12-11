@@ -1,5 +1,5 @@
 <template>
-  <div style="height: 100%;">
+  <div class="layout-container">
     <UHorizontalNavigation
       v-if="isLoggedIn && path !== 'login'"
       :links="links"
@@ -90,6 +90,7 @@ export default {
 </script>
 
 <style>
+.layout-container {}
 .navigation {
   background-color: white;
 }

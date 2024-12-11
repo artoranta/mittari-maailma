@@ -6,6 +6,16 @@ const initialState = {
   url: !process.client ? undefined : window.localStorage.getItem('url')
 }
 
+const offsets = {
+  '06696698': 82.502,
+  '06697364': 176.819
+}
+
+const names = {
+  '06696698': 'lämmin',
+  '06697364': 'kylmä'
+}
+
 const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
 
 async function decryptData(encryptedData, base64Key, base64Iv) {
@@ -28,9 +38,20 @@ async function decryptData(encryptedData, base64Key, base64Iv) {
   return new TextDecoder().decode(decryptedBuffer);
 }
 
+const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
+  id,
+  media,
+  meter,
+  name: names[id] || '',
+  total_m3: (Math.round((total_m3 + (offsets[id] || 0)) * 1000) / 1000).toFixed(3),
+  timestamp
+})
+
+
 export const useMain = defineStore('main', {
   state: () => ({
     loading: [],
+    latest: [],
     measurements: [],
     timestamp: new Date().toISOString(),
     encryptionKey: initialState.encryptionKey,
@@ -84,7 +105,7 @@ export const useMain = defineStore('main', {
             window.localStorage.setItem('encryptionKey', this.encryptionKey)
             window.localStorage.setItem('url', this.url)
           }
-          await main.getMeasurements()
+          await main.getLatest()
           this.stopLoading('login')
           callback()
         }
@@ -104,7 +125,28 @@ export const useMain = defineStore('main', {
       this.encryptionKey = null
       this.url = null
       this.user = null
+      this.latest = []
       this.measurements = []
+    },
+    async getLatest() {
+      try {
+        this.startLoading('latest')
+        const api = mande(atob(this.url))
+        const path = `/latest.json`;
+        const latest = await api.get(path)
+        try {
+          this.latest = (await Promise.all(Object.values(latest)
+            .map(async value => JSON.parse(await decryptData(value.encryptedData, this.encryptionKey, value.iv)))))
+            .map(convertMeasurement)
+        } catch (err) {
+          console.log(err.message)
+        }
+        this.timestamp = new Date().toISOString()
+        this.stopLoading('latest')
+      } catch (err) {
+        console.log(err.message)
+        this.stopLoading('latest')
+      }
     },
     async getMeasurements() {
       try {
@@ -112,25 +154,9 @@ export const useMain = defineStore('main', {
         const api = mande(atob(this.url))
         const path = `/measurements.json`;
         const measurements = await api.get(path)
-        const timestamps = {}
-        const offsets = {
-          '06696698': 82.502,
-          '06697364': 176.819
-        }
-        for (let i = 0; i < Object.values(measurements).length; i++) {
-          try {
-            const measurement = Object.values(measurements)[i]
-            const decryptedMeasurement = JSON.parse(await decryptData(measurement.encryptedData, this.encryptionKey, measurement.iv))
-            if (!Object.hasOwnProperty.call(timestamps, decryptedMeasurement.id)) {
-              timestamps[decryptedMeasurement.id] = { ...decryptedMeasurement, total_m3: (Math.round((decryptedMeasurement.total_m3 + (offsets[decryptedMeasurement.id] || 0)) * 1000) / 1000).toFixed(3) }
-            } else if (new Date(decryptedMeasurement.timestamp) > new Date(timestamps[decryptedMeasurement.id].timestamp)){
-              timestamps[decryptedMeasurement.id] = { ...decryptedMeasurement, total_m3: (Math.round((decryptedMeasurement.total_m3 + (offsets[decryptedMeasurement.id] || 0)) * 1000) / 1000).toFixed(3) }
-            }
-          } catch (err) {
-            console.log(err.message)
-          }
-        }
-        this.measurements = [...Object.values(timestamps).map(i => ({ id: i.id, media: i.media, meter: i.meter, total_m3: i.total_m3, timestamp: i.timestamp }))]
+        this.measurements = (await Promise.all(Object.values(measurements)
+          .map(async value => JSON.parse(await decryptData(value.encryptedData, this.encryptionKey, value.iv)))))
+          .map(convertMeasurement)
         this.timestamp = new Date().toISOString()
         this.stopLoading('measurements')
       } catch (err) {

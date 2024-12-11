@@ -3,13 +3,13 @@
     v-if="isLoggedIn"
     style="display: flex; gap: 1.5rem; flex-direction: column; height: 100%; width: 100%;"
   >
-    <UCard class="measurement-card">
+    <UCard class="latest-card">
       <div style="position: absolute; top: 5px; right: 10px; color: grey; font-size: 12px;">
         {{ formatDate(timestamp) }}
       </div>
       <pre
-        class="measurement"
-      >{{ JSON.stringify(measurements, undefined, 2).slice(0, 50001) }}</pre>
+        class="latest"
+      >{{ JSON.stringify(latest, undefined, 2).slice(0, 50001) }}</pre>
     </UCard>
     <UButton
       :label="$t('_index.refresh')"
@@ -18,7 +18,7 @@
       :loading="isLoading"
       leading-icon="i-heroicons-arrow-path-20-solid"
       block
-      @click="getMeasurements()"
+      @click="getLatest()"
     />
   </div>
 </template>
@@ -36,15 +36,15 @@ export default {
   computed: {
     ...mapState(useMain, {
       isLoading: (store) => !!store.loading.length,
-      measurements: (store) => store.measurements,
+      latest: (store) => store.latest,
       timestamp: (store) => store.timestamp,
       isLoggedIn: (store) => store.isLoggedIn,
     })
   },
   watch: {},
   created () {
-    if (this.isLoggedIn && this.measurements.length === 0) {
-      this.getMeasurements()
+    if (this.isLoggedIn && this.latest.length === 0) {
+      this.getLatest()
     }
   },
   mounted() {},
@@ -53,10 +53,10 @@ export default {
     formatDate(string) {
       return dayjs(string).locale('fi').format('D.M.YYYY [klo] HH:mm.ss')
     },
-    getMeasurements() {
+    getLatest() {
       try {
         const main = useMain()
-        main.getMeasurements()
+        main.getLatest()
       } catch (err) {
         console.log(err.message)
       }
@@ -67,11 +67,14 @@ export default {
 </script>
 
 <style>
-.measurement-card {
+.latest-card {
   position: relative;
-  min-height: 360px;
+  min-height: 399px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
 }
-.measurement {
+.latest {
   font-size: 13px;
   font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   cursor: text;

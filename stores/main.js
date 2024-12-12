@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { mande } from 'mande'
-import { sub } from 'date-fns'
 
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),
@@ -54,6 +53,8 @@ export const useMain = defineStore('main', {
     loading: [],
     latest: [],
     measurements: [],
+    start: null,
+    end: null,
     timestamp: new Date().toISOString(),
     encryptionKey: initialState.encryptionKey,
     url: initialState.url,
@@ -77,7 +78,7 @@ export const useMain = defineStore('main', {
       const api = mande(atob(this.url))
       const path = `/users.json`;
       const users = await api.get(path)
-      for (let i = 0; i < Object.values(users).length; i++) {
+      for (let i = 0; i < Object.values(users || {}).length; i++) {
         try {
           const user = Object.values(users)[i]
           const decryptedUser = await decryptData(user.encryptedData, this.encryptionKey, user.iv)
@@ -171,6 +172,13 @@ export const useMain = defineStore('main', {
             return 0;
           });
         this.timestamp = new Date().toISOString()
+        if (start && end) {
+          this.start = start
+          this.end = end
+        } else {
+          this.start = null
+          this.end = null
+        }
         this.stopLoading('measurements')
       } catch (err) {
         console.log(err.message)

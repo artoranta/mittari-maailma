@@ -22,7 +22,7 @@ export default {
           download: 'Download SVG',
           exportToSVG: 'Download SVG',
           exportToPNG: 'Download PNG',
-          exportToCSV: '@:export.csv',
+          exportToCSV: 'Download CSV',
           menu: 'Menu',
           selection: 'Selection',
           selectionZoom: 'Selection Zoom',

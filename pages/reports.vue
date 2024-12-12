@@ -12,6 +12,22 @@
         class="spinner w-10 h-10"
       />
     </div>
+    <apexchart
+      v-if="days.length && !noFullHistory"
+      :height="350"
+      :options="getOptions(uniq((days || []).map(d => d.date)))"
+      :series="Object.values(days.reduce((acc, { name, consumption }) => {
+        if (!Object.hasOwnProperty.call(acc, name)) {
+          acc[name] = {
+            name,
+            data: [],
+            color: name === 'lämmin' ? '#ff3d36' : '#52a1fe'
+          };
+        }
+        acc[name].data.push(consumption);
+        return acc;
+      }, {}))"
+    />
     <UTable
       :columns="columns"
       :rows="days"
@@ -20,7 +36,10 @@
 </template>
 
 <script>
+import { uniq } from 'lodash';
 import { mapState } from 'pinia';
+import fiCharts from "~/locales/fi/charts.js";
+import enCharts from "~/locales/en/charts.js";
 
 Date.prototype.stdTimezoneOffset = function () {
   const jan = new Date(this.getFullYear(), 0, 1);
@@ -31,6 +50,10 @@ Date.prototype.stdTimezoneOffset = function () {
 Date.prototype.isDstObserved = function () {
   return this.getTimezoneOffset() < this.stdTimezoneOffset();
 };
+
+const formatDate = (value, reverse) => {
+  return reverse ? `${value.split('.').reverse().join('-')}T00:00:00.000Z` : value.split('T')[0].split('-').reverse().join('.')
+}
 
 /**
  * Converts date object which has finnish UTC(+2 OR +3) as UTC0 to valid date object and vice versa.
@@ -89,10 +112,11 @@ export default {
     ...mapState(useMain, {
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
+      noFullHistory: (store) => !!store.start && !!store.end,
       days: (store) => Object.values(store.measurements.reduce((acc, cur) => {
         const name = cur.name || cur.id;
         const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true);
-        const date = timestamp.split('T')[0].split('-').reverse().join('.')
+        const date = formatDate(timestamp)
         const value = Number.parseFloat(cur.total_m3);
         if (!Object.hasOwnProperty.call(acc, name)) {
           acc[name] = {}
@@ -117,7 +141,7 @@ export default {
   },
   watch: {},
   async created () {
-    if (this.isLoggedIn && this.days.length === 0) {
+    if (this.isLoggedIn && (this.noFullHistory || this.days.length === 0)) {
       await this.getMeasurements()
     }
   },
@@ -130,6 +154,35 @@ export default {
         await main.getMeasurements(start, end)
       } catch (err) {
         console.log(err.message)
+      }
+    },
+    formatDate (...args) {
+      return formatDate(...args)
+    },
+    uniq (array) {
+      return uniq(array)
+    },
+    getOptions(categories) {
+      return {
+        chart: {
+          stacked: false,
+          zoom: {
+            enabled: false
+          },
+          height: 350,
+          type: 'bar',
+          locales: [
+            fiCharts._charts.lang,
+            enCharts._charts.lang
+          ],
+          defaultLocale: 'fi'
+        },
+        dataLabels: {
+          enabled: true
+        },
+        xaxis: {
+          categories,
+        }
       }
     }
   }

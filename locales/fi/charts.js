@@ -22,7 +22,7 @@ export default {
           download: 'Lataa SVG',
           exportToSVG: 'Lataa SVG',
           exportToPNG: 'Lataa PNG',
-          exportToCSV: '@:export.csv',
+          exportToCSV: 'Lataa CSV',
           menu: 'Valikko',
           selection: 'Valinta',
           selectionZoom: 'Zoomaa rajaamalla',

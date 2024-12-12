@@ -18,7 +18,7 @@ export default {
     logout: 'Uloskirjautuminen'
   },
   _reports: {
-    date: 'Päivämäärä',
+    date: 'Pvm.',
     name: 'Nimi',
     range: 'Arvoväli',
     consumption: 'Kulutus (m³)',

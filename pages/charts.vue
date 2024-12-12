@@ -26,6 +26,8 @@
           <DatePicker
             v-model="selected"
             locale="fi-FI"
+            :columns="1"
+            @day-click="onDayClick"
             @close="close"
           />
         </div>
@@ -125,7 +127,8 @@ export default {
         }
       },
       selected: { start: sub(new Date(), { days: 1 }), end: new Date() },
-      locales: { fi, en: undefined }
+      locales: { fi, en: undefined },
+      rangeSelected: false
     }
   },
   computed: {
@@ -152,8 +155,9 @@ export default {
   },
   watch: {
     selected (v) {
-      this.duration =
-      this.getMeasurements(v.start, v.end)
+      if (!this.rangeSelected) {
+        this.getMeasurements(v.start, v.end)
+      }
     }
   },
   async created () {
@@ -195,12 +199,17 @@ export default {
       return formatDuration(intervalToDuration(this.selected)) === formatDuration(duration)
     },
     selectRange(duration) {
-      this.selected = { start: sub(new Date(), duration), end: new Date(), duration }
+      this.rangeSelected = true
+      this.selected = { start: sub(new Date(), duration), end: new Date() }
+      this.getMeasurements(this.selected.start, this.selected.end)
     },
     format(...args) {
       return format(...args, ...(this.locales[this.locale] ? [{
         locale: this.locales[this.locale]
       }] : []))
+    },
+    onDayClick () {
+      this.rangeSelected = false
     }
   }
 }

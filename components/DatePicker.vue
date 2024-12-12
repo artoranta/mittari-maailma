@@ -16,10 +16,14 @@ const props = defineProps({
   locale: {
     type: String,
     default: 'en'
+  },
+  columns: {
+    type: Number,
+    default: 1
   }
 })
 
-const emit = defineEmits(['update:model-value', 'close'])
+const emit = defineEmits(['update:model-value', 'close', 'day-click'])
 
 const date = computed({
   get: () => props.modelValue,
@@ -37,9 +41,25 @@ const attrs = {
   'first-day-of-week': 2
 }
 
-function onDayClick(_: any, event: MouseEvent): void {
+const rules = ref([
+  {
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    milliseconds: 0,
+  },
+  {
+    hours: 23,
+    minutes: 59,
+    seconds: 59,
+    milliseconds: 999,
+  }
+]);
+
+function onDayClick(value: any, event: MouseEvent): void {
   const target = event.target as HTMLElement
   target.blur()
+  emit('day-click', value)
 }
 </script>
 
@@ -48,7 +68,8 @@ function onDayClick(_: any, event: MouseEvent): void {
     v-if="date && (date as DatePickerRangeObject)?.start && (date as DatePickerRangeObject)?.end"
     v-model.range="date"
     :locale="props.locale"
-    :columns="2"
+    :columns="props.columns"
+    :rules="rules"
     v-bind="{ ...attrs, ...$attrs }"
     @dayclick="onDayClick"
   />
@@ -56,6 +77,7 @@ function onDayClick(_: any, event: MouseEvent): void {
     v-else
     v-model="date"
     :locale="props.locale"
+    :rules="rules"
     v-bind="{ ...attrs, ...$attrs }"
     @dayclick="onDayClick"
   />

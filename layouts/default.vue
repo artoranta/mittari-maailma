@@ -48,6 +48,10 @@ export default {
             label: this.$device.isMobile ? undefined : this.$t('_links.charts'),
             icon: 'i-heroicons-chart-bar',
             to: '/charts'
+          }, {
+            label: this.$device.isMobile ? undefined : this.$t('_links.reports'),
+            icon: 'i-heroicons-rectangle-stack',
+            to: '/reports'
           }
         ],
         [

@@ -150,11 +150,11 @@ export const useMain = defineStore('main', {
         this.stopLoading('latest')
       }
     },
-    async getMeasurements(start = sub(new Date(), { days: 1 }), end = new Date()) {
+    async getMeasurements(start, end) {
       try {
         this.startLoading('measurements')
         const api = mande(atob(this.url))
-        const path = encodeURI(`/measurements.json?orderBy="timestamp"&startAt="${new Date(start).toISOString()}"&endAt="${new Date(end).toISOString()}"`);
+        const path = start && end ? encodeURI(`/measurements.json?orderBy="timestamp"&startAt="${new Date(start).toISOString()}"&endAt="${new Date(end).toISOString()}"`) : '/measurements.json';
         const measurements = await api.get(path)
         this.measurements = (await Promise.all(Object.values(measurements)
           .map(async value => JSON.parse(await decryptData(value.encryptedData, this.encryptionKey, value.iv)))))

@@ -3,6 +3,7 @@ export default {
   _links: {
     home: 'Home',
     charts: 'Charts',
+    reports: 'Reports',
     profile: 'User Profile',
     logout: 'Logout'
   },
@@ -16,5 +17,12 @@ export default {
   },
   _logout: {
     logout: 'Logout'
+  },
+  _reports: {
+    date: 'Date',
+    name: 'Name',
+    range: 'Range',
+    consumption: 'Consumption (m³)',
+    count: 'Count (kpl)'
   }
 }

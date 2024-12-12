@@ -72,7 +72,6 @@ export default {
   },
   data() {
     return {
-      ready: false,
       ranges: [
         { label: this.$t('_charts.range.twelveHours'), duration: { hours: 12 } },
         { label: this.$t('_charts.range.day'), duration: { days: 1 } },
@@ -148,7 +147,6 @@ export default {
       locale: (store) => store.locale,
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
-      latest: (store) => store.latest,
       series: (store) => Object.values(store.measurements.reduce((acc, cur) => {
         const name = cur.name || cur.id;
         const timestamp = new Date(cur.timestamp).getTime();
@@ -156,7 +154,7 @@ export default {
         if (!Object.hasOwnProperty.call(acc, name)) {
           acc[name] = {
             name,
-            data: [[timestamp, value]],
+            data: [],
             color: name === 'lämmin' ? '#ff3d36' : '#52a1fe'
           };
         }
@@ -165,32 +163,15 @@ export default {
       }, {})),
     }),
   },
-  watch: {
-    selected (v) {
-      if (!this.selectedRange) {
-        this.getMeasurements(v.start, v.end)
-      }
-    }
-  },
+  watch: {},
   async created () {
-    if (this.isLoggedIn && this.latest.length === 0) {
-      await this.getLatest()
-    }
     if (this.isLoggedIn && this.series.length === 0) {
-      await this.getMeasurements()
+      await this.getMeasurements(this.selected.start, this.selected.end)
     }
   },
   mounted() {},
   beforeUnmount () {},
   methods: {
-    getLatest() {
-      try {
-        const main = useMain()
-        main.getLatest()
-      } catch (err) {
-        console.log(err.message)
-      }
-    },
     async getMeasurements(start, end) {
       try {
         const main = useMain()
@@ -205,21 +186,6 @@ export default {
       }
       if (this.$refs[name]) {
         this.$refs[name][0].resetSeries()
-        /*
-        const annotation = {
-          y: 83.700,
-          y2: 83.800,
-          // borderColor: '#000',
-          // fillColor: '#FEB019',
-          opacity: 0.1,
-          label: {
-            text: 'Y-axis range',
-            textAnchor: 'start',
-            position: 'left'
-          }
-        }
-        this.$refs[name][0].addYaxisAnnotation(annotation)
-        */
       }
     },
     isRangeSelected (duration) {
@@ -243,6 +209,9 @@ export default {
     closeDatePicker (cb) {
       if (this.initialized) {
         cb()
+        this.$nextTick(() => {
+          this.getMeasurements(this.selected.start, this.selected.end)
+        });
       }
     },
     getAnnotations (name) {
@@ -256,7 +225,7 @@ export default {
           borderColor: '#cecece',
           borderWidth: 2,
           label: {
-            text: dff.toFixed(2) + 'm³',
+            text: dff.toFixed(3) + 'm³',
             position: 'left',
             textAnchor: 'right',
             offsetX: 10,

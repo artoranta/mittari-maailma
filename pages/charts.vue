@@ -3,6 +3,34 @@
     v-if="isLoggedIn"
     class="charts-card"
   >
+    <UPopover :popper="{ placement: 'bottom-start' }">
+      <UButton icon="i-heroicons-calendar-days-20-solid">
+        {{ format(selected.start, 'd MMM, yyy') }} - {{ format(selected.end, 'd MMM, yyy') }}
+      </UButton>
+      <template #panel="{ close }">
+        <div class="flex items-center sm:divide-x divide-gray-200 dark:divide-gray-800">
+          <div class="hidden sm:flex flex-col py-4">
+            <UButton
+              v-for="(range, index) in ranges"
+              :key="index"
+              :label="range.label"
+              color="gray"
+              :disabled="isLoading"
+              variant="ghost"
+              class="rounded-none px-6"
+              :class="[isRangeSelected(range.duration) ? 'bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50']"
+              truncate
+              @click="selectRange(range.duration)"
+            />
+          </div>
+          <DatePicker
+            v-model="selected"
+            locale="fi-FI"
+            @close="close"
+          />
+        </div>
+      </template>
+    </UPopover>
     <div
       v-if="isLoading"
       class="spinner-wrapper"
@@ -25,20 +53,41 @@
 </template>
 
 <script>
-import { mapState } from "pinia";
-import en from '~/locales/en/charts'
-import fi from '~/locales/fi/charts'
+import { mapState } from 'pinia';
+import { fi } from 'date-fns/locale'
+import { sub, format, formatDuration, intervalToDuration } from 'date-fns'
+import enCharts from '~/locales/en/charts'
+import fiCharts from '~/locales/fi/charts'
+import DatePicker from '~/components/DatePicker.vue'
 
 export default {
   name: 'Charts',
-  components: {},
+  components: {
+    DatePicker
+  },
   data() {
     return {
       ready: false,
+      ranges: [
+        { label: this.$t('_charts.range.twelveHours'), duration: { hours: 12 } },
+        { label: this.$t('_charts.range.day'), duration: { days: 1 } },
+        { label: this.$t('_charts.range.twoDays'), duration: { days: 2 } },
+        { label: this.$t('_charts.range.week'), duration: { days: 7 } },
+        { label: this.$t('_charts.range.twoWeeks'), duration: { days: 14 } },
+        { label: this.$t('_charts.range.month'), duration: { months: 1 } },
+        { label: this.$t('_charts.range.threeMonths'), duration: { months: 3 } },
+        { label: this.$t('_charts.range.sixMonths'), duration: { months: 6 } },
+        { label: this.$t('_charts.range.year'), duration: { years: 1 } }
+      ],
       options: {
         chart: {
           height: 350,
-          type: 'line'
+          type: 'line',
+          locales: [
+            fiCharts._charts.lang,
+            enCharts._charts.lang
+          ],
+          defaultLocale: 'fi'
         },
         stroke: {
           show: true,
@@ -73,16 +122,15 @@ export default {
             show: true,
             format: 'd.M klo HH:mm'
           }
-        },
-        locales: [
-          fi.charts.lang,
-          en.charts.lang
-        ]
-      }
+        }
+      },
+      selected: { start: sub(new Date(), { days: 1 }), end: new Date() },
+      locales: { fi, en: undefined }
     }
   },
   computed: {
     ...mapState(useMain, {
+      locale: (store) => store.locale,
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
       latest: (store) => store.latest,
@@ -102,7 +150,12 @@ export default {
       }, {})),
     }),
   },
-  watch: {},
+  watch: {
+    selected (v) {
+      this.duration =
+      this.getMeasurements(v.start, v.end)
+    }
+  },
   async created () {
     if (this.isLoggedIn && this.latest.length === 0) {
       await this.getLatest()
@@ -122,21 +175,32 @@ export default {
         console.log(err.message)
       }
     },
-    getMeasurements() {
+    getMeasurements(start, end) {
       try {
         const main = useMain()
-        main.getMeasurements()
+        main.getMeasurements(start, end)
       } catch (err) {
         console.log(err.message)
       }
     },
-    resetZoom (e, name) {
-      if (e.target.tagName !== 'foreignObject' && e.target.tagName !== 'svg') {
+    resetZoom (e = {}, name) {
+      if ((e.target || {}).tagName !== 'foreignObject' && (e.target || {}).tagName !== 'svg') {
         return
       }
       if (this.$refs[name]) {
         this.$refs[name][0].resetSeries()
       }
+    },
+    isRangeSelected (duration) {
+      return formatDuration(intervalToDuration(this.selected)) === formatDuration(duration)
+    },
+    selectRange(duration) {
+      this.selected = { start: sub(new Date(), duration), end: new Date(), duration }
+    },
+    format(...args) {
+      return format(...args, ...(this.locales[this.locale] ? [{
+        locale: this.locales[this.locale]
+      }] : []))
     }
   }
 }
@@ -149,7 +213,10 @@ export default {
   width: 100%;
 }
 .spinner-wrapper {
-  height: 350px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
   width: 100%;
   display: flex;
   justify-content: center;

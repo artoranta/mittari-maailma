@@ -1,12 +1,14 @@
 export default {
-  charts: {
+  _charts: {
     range: {
+      twelveHours: '12h',
       day: '24h',
       twoDays: '48h',
       week: 'viikko',
       twoWeeks: '2 viikkoa',
-      month: 'kuukausi',
-      twoMonths: '2 kuukautta',
+      month: '1 kuukausi',
+      threeMonths: '3 kuukautta',
+      sixMonths: '6 kuukautta',
       year: 'vuosi'
     },
     lang: {

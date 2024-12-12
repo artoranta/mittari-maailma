@@ -1,12 +1,14 @@
 export default {
-  charts: {
+  _charts: {
     range: {
+      twelveHours: '12h',
       day: '24h',
       twoDays: '48h',
       week: 'week',
       twoWeeks: '2 weeks',
-      month: 'month',
-      twoMonths: '2 months',
+      month: '1 month',
+      threeMonths: '3 months',
+      sixMonths: '6 months',
       year: 'year'
     },
     lang: {

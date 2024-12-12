@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { mande } from 'mande'
+import { sub } from 'date-fns'
 
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),
@@ -8,7 +9,7 @@ const initialState = {
 
 const offsets = {
   '06696698': 82.502,
-  '06697364': 176.819
+  '06697364': 176.820
 }
 
 const names = {
@@ -57,7 +58,8 @@ export const useMain = defineStore('main', {
     encryptionKey: initialState.encryptionKey,
     url: initialState.url,
     errorMessage: null,
-    user: null
+    user: null,
+    locale: 'fi'
   }),
   getters: {
     isLoggedIn(state) {
@@ -148,15 +150,26 @@ export const useMain = defineStore('main', {
         this.stopLoading('latest')
       }
     },
-    async getMeasurements() {
+    async getMeasurements(start = sub(new Date(), { days: 1 }), end = new Date()) {
       try {
         this.startLoading('measurements')
         const api = mande(atob(this.url))
-        const path = `/measurements.json`;
+        const path = encodeURI(`/measurements.json?orderBy="timestamp"&startAt="${new Date(start).toISOString()}"&endAt="${new Date(end).toISOString()}"`);
         const measurements = await api.get(path)
         this.measurements = (await Promise.all(Object.values(measurements)
           .map(async value => JSON.parse(await decryptData(value.encryptedData, this.encryptionKey, value.iv)))))
-          .map(convertMeasurement)
+          .map(convertMeasurement).sort((a, b) => {
+            // Convert the timestamps to Date objects
+            const dateA = new Date(a.timestamp);
+            const dateB = new Date(b.timestamp);
+
+            // Compare the dates and return either -1, 0, or 1
+            // depending on whether dateA is before, the same as,
+            // or after dateB
+            if (dateA < dateB) return -1;
+            if (dateA > dateB) return 1;
+            return 0;
+          });
         this.timestamp = new Date().toISOString()
         this.stopLoading('measurements')
       } catch (err) {

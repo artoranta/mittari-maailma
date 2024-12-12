@@ -2,18 +2,21 @@
 import { createI18n } from 'vue-i18n'
 import * as enMain from '../locales/en/main.js'
 import * as fiMain from '../locales/fi/main.js'
+import * as enCharts from '../locales/en/charts.js'
+import * as fiCharts from '../locales/fi/charts.js'
 
 export default defineNuxtPlugin(({ vueApp }) => {
-  const locales = {
-    en: enMain,
-    fi: fiMain
+  const messages = {
+    en: {
+      ...enMain.default,
+      ...enCharts.default
+    },
+    fi: {
+      ...fiMain.default,
+      ...fiCharts.default
+    }
   }
-  const messages = {}
-  for (const path in locales) {
-    messages[path] = messages[path]
-      ? Object.assign(messages[path], locales[path].default)
-      : locales[path].default
-  }
+
   const i18n = createI18n({
     legacy: false,
     locale: 'fi',

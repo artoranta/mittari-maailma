@@ -4,12 +4,15 @@
     class="charts-card"
   >
     <UPopover :popper="{ placement: 'bottom-start' }">
-      <UButton icon="i-heroicons-calendar-days-20-solid">
+      <UButton
+        icon="i-heroicons-calendar-days-20-solid"
+        style="width: 100%; display: flex; justify-content: center; margin-bottom: 0.75rem;"
+      >
         {{ format(selected.start, 'd MMM, yyy') }} - {{ format(selected.end, 'd MMM, yyy') }}
       </UButton>
       <template #panel="{ close }">
-        <div class="flex items-center sm:divide-x divide-gray-200 dark:divide-gray-800">
-          <div class="hidden sm:flex flex-col py-4">
+        <div class="flex items-center divide-x divide-gray-200 dark:divide-gray-800">
+          <div class="flex flex-col py-4">
             <UButton
               v-for="(range, index) in ranges"
               :key="index"
@@ -26,7 +29,7 @@
           <DatePicker
             v-model="selected"
             locale="fi-FI"
-            :columns="1"
+            :columns="$device.isMobile ? 1 : 2"
             @day-click="onDayClick"
             @close="closeDatePicker(close)"
           />
@@ -128,7 +131,7 @@ export default {
       },
       selected: { start: sub(new Date(), { days: 1 }), end: new Date() },
       locales: { fi, en: undefined },
-      rangeSelected: true,
+      selectedRange: { start: sub(new Date(), { days: 1 }), end: new Date() },
       initialized: false
     }
   },
@@ -156,7 +159,7 @@ export default {
   },
   watch: {
     selected (v) {
-      if (!this.rangeSelected) {
+      if (!this.selectedRange) {
         this.getMeasurements(v.start, v.end)
       }
     }
@@ -197,11 +200,11 @@ export default {
       }
     },
     isRangeSelected (duration) {
-      return formatDuration(intervalToDuration(this.selected)) === formatDuration(duration)
+      return this.selectedRange ? formatDuration(intervalToDuration(this.selectedRange)) === formatDuration(duration) : false
     },
     selectRange(duration) {
       this.initialized = true
-      this.rangeSelected = true
+      this.selectedRange = { start: sub(new Date(), duration), end: new Date() }
       this.selected = { start: sub(new Date(), duration), end: new Date() }
       this.getMeasurements(this.selected.start, this.selected.end)
     },
@@ -212,7 +215,7 @@ export default {
     },
     onDayClick () {
       this.initialized = true
-      this.rangeSelected = false
+      this.selectedRange = null
     },
     closeDatePicker (cb) {
       if (this.initialized) {

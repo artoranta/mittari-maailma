@@ -5,10 +5,10 @@ export default {
       day: '24h',
       twoDays: '48h',
       week: 'viikko',
-      twoWeeks: '2 viikkoa',
-      month: '1 kuukausi',
-      threeMonths: '3 kuukautta',
-      sixMonths: '6 kuukautta',
+      twoWeeks: '2vko',
+      month: '1kk',
+      threeMonths: '3kk',
+      sixMonths: '6kk',
       year: 'vuosi'
     },
     lang: {

@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isLoggedIn"
-    style="display: flex; gap: 1.5rem; flex-direction: column; height: 100%; width: 100%;"
+    style="display: flex; gap: 1rem; flex-direction: column; height: 100%; width: 100%;"
   >
     <UCard class="latest-card">
       <div style="position: absolute; top: 5px; right: 10px; color: grey; font-size: 12px;">

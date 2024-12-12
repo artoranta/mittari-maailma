@@ -28,7 +28,7 @@
             locale="fi-FI"
             :columns="1"
             @day-click="onDayClick"
-            @close="close"
+            @close="closeDatePicker(close)"
           />
         </div>
       </template>
@@ -128,7 +128,8 @@ export default {
       },
       selected: { start: sub(new Date(), { days: 1 }), end: new Date() },
       locales: { fi, en: undefined },
-      rangeSelected: false
+      rangeSelected: true,
+      initialized: false
     }
   },
   computed: {
@@ -199,6 +200,7 @@ export default {
       return formatDuration(intervalToDuration(this.selected)) === formatDuration(duration)
     },
     selectRange(duration) {
+      this.initialized = true
       this.rangeSelected = true
       this.selected = { start: sub(new Date(), duration), end: new Date() }
       this.getMeasurements(this.selected.start, this.selected.end)
@@ -209,7 +211,13 @@ export default {
       }] : []))
     },
     onDayClick () {
+      this.initialized = true
       this.rangeSelected = false
+    },
+    closeDatePicker (cb) {
+      if (this.initialized) {
+        cb()
+      }
     }
   }
 }

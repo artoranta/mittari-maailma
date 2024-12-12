@@ -50,7 +50,7 @@
       :key="s.name"
       :ref="s.name"
       :height="options.chart.height"
-      :options="options"
+      :options="{ ...options, annotations: getAnnotations(s.name) }"
       :series="[s]"
       @dblclick="resetZoom($event, s.name)"
     />
@@ -106,6 +106,14 @@ export default {
             datetimeUTC: false
           },
           type: 'datetime',
+        },
+        yaxis: {
+          axisBorder: {
+            show: true
+          },
+          axisTicks: {
+            show: true
+          }
         },
         grid: {
           show: true,
@@ -183,10 +191,10 @@ export default {
         console.log(err.message)
       }
     },
-    getMeasurements(start, end) {
+    async getMeasurements(start, end) {
       try {
         const main = useMain()
-        main.getMeasurements(start, end)
+        await main.getMeasurements(start, end)
       } catch (err) {
         console.log(err.message)
       }
@@ -197,16 +205,31 @@ export default {
       }
       if (this.$refs[name]) {
         this.$refs[name][0].resetSeries()
+        /*
+        const annotation = {
+          y: 83.700,
+          y2: 83.800,
+          // borderColor: '#000',
+          // fillColor: '#FEB019',
+          opacity: 0.1,
+          label: {
+            text: 'Y-axis range',
+            textAnchor: 'start',
+            position: 'left'
+          }
+        }
+        this.$refs[name][0].addYaxisAnnotation(annotation)
+        */
       }
     },
     isRangeSelected (duration) {
       return this.selectedRange ? formatDuration(intervalToDuration(this.selectedRange)) === formatDuration(duration) : false
     },
-    selectRange(duration) {
+    async selectRange(duration) {
       this.initialized = true
       this.selectedRange = { start: sub(new Date(), duration), end: new Date() }
       this.selected = { start: sub(new Date(), duration), end: new Date() }
-      this.getMeasurements(this.selected.start, this.selected.end)
+      await this.getMeasurements(this.selected.start, this.selected.end)
     },
     format(...args) {
       return format(...args, ...(this.locales[this.locale] ? [{
@@ -221,6 +244,30 @@ export default {
       if (this.initialized) {
         cb()
       }
+    },
+    getAnnotations (name) {
+      const s = this.series.find(i => i.name === name)
+      const annotations = { yaxis: [], xaxis: [] }
+      if (s) {
+        const avg = Math.max(...s.data.map(([_ts, vl]) => vl))
+        const dff = (Math.max(...s.data.map(([_ts, vl]) => vl)) - Math.min(...s.data.map(([_ts, vl]) => vl)))
+        annotations.yaxis.push({
+          y: avg,
+          borderColor: '#cecece',
+          borderWidth: 2,
+          label: {
+            text: dff.toFixed(2) + 'm³',
+            position: 'left',
+            textAnchor: 'right',
+            offsetX: 10,
+            offsetY: -5,
+            style: {
+              fontSize: '11px'
+            }
+          }
+        })
+      }
+      return annotations
     }
   }
 }

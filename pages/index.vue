@@ -32,19 +32,21 @@
       <div style="position: absolute; top: 5px; right: 10px; color: grey; font-size: 12px;">
         {{ formatDate(timestamp) }}
       </div>
+      <UButton
+        size="sm"
+        color="white"
+        variant="solid"
+        :disabled="isLoading"
+        :loading="isLoading"
+        class="refresh-button"
+        leading-icon="i-heroicons-arrow-path-20-solid"
+        block
+        @click="getLatest()"
+      />
       <!--<pre
         class="latest"
       >{{ JSON.stringify(latest, undefined, 2).slice(0, 50001) }}</pre>-->
     </UCard>
-    <UButton
-      :label="$t('_index.refresh')"
-      size="sm"
-      :disabled="isLoading"
-      :loading="isLoading"
-      leading-icon="i-heroicons-arrow-path-20-solid"
-      block
-      @click="getLatest()"
-    />
   </div>
 </template>
 
@@ -84,10 +86,10 @@ export default {
     formatDate(string) {
       return dayjs(string).locale('fi').format('D.M.YYYY [klo] HH:mm.ss')
     },
-    getLatest() {
+    async getLatest() {
       try {
         const main = useMain()
-        main.getLatest()
+        await main.getLatest()
       } catch (err) {
         console.log(err.message)
       }
@@ -100,7 +102,6 @@ export default {
 <style>
 .latest-card {
   position: relative;
-  min-height: 399px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -111,7 +112,16 @@ export default {
   cursor: text;
   width: 100%;
 }
+.refresh-button {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  width: 3rem;
+  color: grey;
+}
 .meter-container {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
   display: flex;
   flex-direction: row;
   justify-content: center;

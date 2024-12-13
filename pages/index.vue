@@ -137,6 +137,8 @@ export default {
   resize: both;
 }
 .meter-reading {
+  position: relative;
+  z-index: 1000;
   margin-top: 4.05rem;
   margin-right: 3.40rem;
   text-align: right;
@@ -146,6 +148,8 @@ export default {
 }
 
 .meter-reading-dot {
+  position: relative;
+  z-index: 1000;
   margin-top: -2rem;
   margin-right: 6.05rem;
   text-align: right;
@@ -155,6 +159,8 @@ export default {
 }
 
 .meter-reading-timestamp {
+  position: relative;
+  z-index: 1000;
   margin-top: 1rem;
   margin-left: 5.6rem;
   text-align: right;
@@ -165,6 +171,8 @@ export default {
 }
 
 .meter-reading-id {
+  position: relative;
+  z-index: 1000;
   margin-top: -7.5rem;
   margin-left: 1.8rem;
   text-align: right;
@@ -178,6 +186,5 @@ export default {
   position: absolute;
   top: 0;
   right: 0;
-  opacity: 0.5;
 }
 </style>

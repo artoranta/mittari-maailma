@@ -24,16 +24,14 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/fi'
 import updateLocale from 'dayjs/plugin/updateLocale'
-import {mapState} from "pinia";
+import { mapState } from "pinia"
 
 dayjs.extend(updateLocale)
-dayjs.updateLocale('fi', {
-  weekStart: 1
-})
+dayjs.updateLocale('fi', { weekStart: 1 })
 
 export default {
   i18n: {
-    inject: true
+    inject: true,
   },
   auth: false,
   data() {
@@ -43,25 +41,27 @@ export default {
           {
             label: this.$device.isMobile ? undefined : this.$t('_links.home'),
             icon: 'i-heroicons-home',
-            to: '/'
-          }, {
+            to: '/',
+          },
+          {
             label: this.$device.isMobile ? undefined : this.$t('_links.charts'),
             icon: 'i-heroicons-chart-bar',
-            to: '/charts'
-          }, {
+            to: '/charts',
+          },
+          {
             label: this.$device.isMobile ? undefined : this.$t('_links.reports'),
             icon: 'i-heroicons-rectangle-stack',
-            to: '/reports'
-          }
+            to: '/reports',
+          },
         ],
         [
           {
             label: this.$device.isMobile ? undefined : this.$t('_links.logout'),
             icon: 'i-heroicons-arrow-right-end-on-rectangle',
-            to: '/logout'
-          }
-        ]
-      ]
+            to: '/logout',
+          },
+        ],
+      ],
     }
   },
   computed: {
@@ -72,7 +72,7 @@ export default {
     path: () => {
       const route = useRoute()
       return route.path.replace('/', '')
-    }
+    },
   },
   mounted() {
   },
@@ -88,8 +88,8 @@ export default {
   methods: {
     formatDate(string) {
       return dayjs(string).locale('fi').format('D.M.YYYY [klo] HH:mm')
-    }
-  }
+    },
+  },
 }
 </script>
 

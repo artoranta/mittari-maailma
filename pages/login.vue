@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import {mapState} from "pinia";
+import { mapState } from "pinia"
 
 export default {
   name: 'Login',
@@ -64,7 +64,7 @@ export default {
       isLoading: (store) => !!store.loading.length,
       isLoggedIn: (store) => store.isLoggedIn,
       errorMessage: (store) => store.errorMessage,
-    })
+    }),
   },
   watch: {},
   async created () {
@@ -95,8 +95,8 @@ export default {
         const router = useRouter()
         router.push('/')
       })
-    }
-  }
+    },
+  },
 }
 
 </script>

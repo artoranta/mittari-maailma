@@ -9,15 +9,54 @@ export default {
       month: '1kk',
       threeMonths: '3kk',
       sixMonths: '6kk',
-      year: 'vuosi'
+      year: 'vuosi',
     },
     lang: {
       name: 'fi',
       options: {
-        months: ['Tammikuu', 'Helmikuu', 'Maaliskuu', 'Huhtikuu', 'Toukokuu', 'Kesäkuu', 'Heinäkuu', 'Elokuu', 'Syyskuu', 'Lokakuu', 'Marraskuu', 'Joulukuu'],
-        shortMonths: ['Tam', 'Hel', 'Maa', 'Huh', 'Tou', 'Kes', 'Hei', 'Elo', 'Syys', 'Lok', 'Mar', 'Jou'],
-        days: ['Sunnuntai', 'Maanantai', 'Tiistai', 'Keskiviikko', 'Torstai', 'Perjantai', 'Lauantai'],
-        shortDays: ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'],
+        months: [
+          'Tammikuu',
+          'Helmikuu',
+          'Maaliskuu',
+          'Huhtikuu',
+          'Toukokuu',
+          'Kesäkuu',
+          'Heinäkuu',
+          'Elokuu',
+          'Syyskuu',
+          'Lokakuu',
+          'Marraskuu',
+          'Joulukuu',
+        ],
+        shortMonths: [
+          'Tam',
+          'Hel',
+          'Maa',
+          'Huh',
+          'Tou',
+          'Kes',
+          'Hei',
+          'Elo',
+          'Syys',
+          'Lok',
+          'Mar',
+          'Jou',
+        ],
+        days: [
+          'Sunnuntai',
+          'Maanantai',
+          'Tiistai',
+          'Keskiviikko',
+          'Torstai',
+          'Perjantai',
+          'Lauantai'],
+        shortDays: ['Su',
+          'Ma',
+          'Ti',
+          'Ke',
+          'To',
+          'Pe',
+          'La'],
         toolbar: {
           download: 'Lataa SVG',
           exportToSVG: 'Lataa SVG',
@@ -29,10 +68,9 @@ export default {
           zoomIn: 'Zoomaa lähemmäs',
           zoomOut: 'Zoomaa kauemmas',
           pan: 'Raahaa',
-          reset: 'Palauta oletus'
-        }
-
-      }
-    }
-  }
+          reset: 'Palauta oletus',
+        },
+      },
+    },
+  },
 }

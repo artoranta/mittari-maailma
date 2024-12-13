@@ -19,7 +19,7 @@ export default {
   },
   mounted() {},
   beforeUnmount () {},
-  methods: {}
+  methods: {},
 }
 
 </script>

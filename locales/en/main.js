@@ -5,24 +5,24 @@ export default {
     charts: 'Charts',
     reports: 'Reports',
     profile: 'User Profile',
-    logout: 'Logout'
+    logout: 'Logout',
   },
   _index: {
-    refresh: 'Refresh'
+    refresh: 'Refresh',
   },
   _login: {
     username: 'Username',
     password: 'Password',
-    login: 'Login'
+    login: 'Login',
   },
   _logout: {
-    logout: 'Logout'
+    logout: 'Logout',
   },
   _reports: {
     date: 'Date',
     name: 'Name',
     range: 'Range',
     consumption: 'Consumption (m³)',
-    count: 'Count (kpl)'
-  }
+    count: 'Count (kpl)',
+  },
 }

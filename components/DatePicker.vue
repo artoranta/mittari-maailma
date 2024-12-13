@@ -5,40 +5,50 @@ import type { DatePickerDate, DatePickerRangeObject } from 'v-calendar/dist/type
 import 'v-calendar/dist/style.css'
 
 defineOptions({
-  inheritAttrs: false
+  inheritAttrs: false,
 })
 
 const props = defineProps({
   modelValue: {
-    type: [Date, Object] as PropType<DatePickerDate | DatePickerRangeObject | null>,
-    default: null
+    type: [
+      Date,
+      Object,
+    ] as PropType<DatePickerDate | DatePickerRangeObject | null>,
+    default: null,
   },
   locale: {
     type: String,
-    default: 'en'
+    default: 'en',
   },
   columns: {
     type: Number,
-    default: 1
-  }
+    default: 1,
+  },
 })
 
-const emit = defineEmits(['update:model-value', 'close', 'day-click'])
+const emit = defineEmits([
+  'update:model-value',
+  'close',
+  'day-click',
+])
 
 const date = computed({
   get: () => props.modelValue,
   set: (value) => {
     emit('update:model-value', value)
     emit('close')
-  }
+  },
 })
 
 const attrs = {
   'transparent': true,
   'borderless': true,
   'color': 'primary',
-  'is-dark': { selector: 'html', darkClass: 'dark' },
-  'first-day-of-week': 2
+  'is-dark': {
+    selector: 'html',
+    darkClass: 'dark',
+  },
+  'first-day-of-week': 2,
 }
 
 const rules = ref([
@@ -53,8 +63,8 @@ const rules = ref([
     minutes: 59,
     seconds: 59,
     milliseconds: 999,
-  }
-]);
+  },
+])
 
 function onDayClick(value: any, event: MouseEvent): void {
   const target = event.target as HTMLElement

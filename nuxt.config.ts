@@ -7,11 +7,11 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@pinia/nuxt',
     '@nuxtjs/device',
-    '@nuxt/fonts'
+    '@nuxt/fonts',
   ],
   runtimeConfig: {
     public: {
       buildDate: (new Date()).toISOString(),
-    }
-  }
+    },
+  },
 })

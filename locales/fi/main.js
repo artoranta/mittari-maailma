@@ -4,24 +4,24 @@ export default {
     home: 'Kotinäkymä',
     charts: 'Graafit',
     reports: 'Raportit',
-    logout: 'Kirjaudu ulos'
+    logout: 'Kirjaudu ulos',
   },
   _index: {
-    refresh: 'Päivitä'
+    refresh: 'Päivitä',
   },
   _login: {
     username: 'Käyttäjätunnus',
     password: 'Salasana',
-    login: 'Kirjaudu'
+    login: 'Kirjaudu',
   },
   _logout: {
-    logout: 'Uloskirjautuminen'
+    logout: 'Uloskirjautuminen',
   },
   _reports: {
     date: 'Pvm.',
     name: 'Nimi',
     range: 'Arvoväli',
     consumption: 'Kulutus (m³)',
-    count: 'Lukemamäärä (kpl)'
-  }
+    count: 'Lukemamäärä (kpl)',
+  },
 }

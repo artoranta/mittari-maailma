@@ -3,20 +3,20 @@ import { mande } from 'mande'
 
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),
-  url: !process.client ? undefined : window.localStorage.getItem('url')
+  url: !process.client ? undefined : window.localStorage.getItem('url'),
 }
 
 const offsets = {
   '06696698': 82.502,
-  '06697364': 176.820
+  '06697364': 176.820,
 }
 
 const names = {
   '06696698': 'lämmin',
-  '06697364': 'kylmä'
+  '06697364': 'kylmä',
 }
 
-const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
 
 async function decryptData(encryptedData, base64Key, base64Iv) {
   const key = await crypto.subtle.importKey(
@@ -24,18 +24,18 @@ async function decryptData(encryptedData, base64Key, base64Iv) {
     Uint8Array.from(atob(base64Key), c => c.charCodeAt(0)),
     'AES-CBC',
     false,
-    ['decrypt']
-  );
+    [
+      'decrypt',
+    ]
+  )
 
-  const iv = Uint8Array.from(atob(base64Iv), c => c.charCodeAt(0));
-  const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
-  const decryptedBuffer = await crypto.subtle.decrypt(
-    { name: 'AES-CBC', iv },
-    key,
-    encryptedBytes
-  );
-
-  return new TextDecoder().decode(decryptedBuffer);
+  const iv = Uint8Array.from(atob(base64Iv), c => c.charCodeAt(0))
+  const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0))
+  const decryptedBuffer = await crypto.subtle.decrypt({
+    name: 'AES-CBC',
+    iv,
+  }, key, encryptedBytes)
+  return new TextDecoder().decode(decryptedBuffer)
 }
 
 const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
@@ -44,7 +44,7 @@ const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
   meter,
   name: names[id] || '',
   total_m3: (Math.round((total_m3 + (offsets[id] || 0)) * 1000) / 1000).toFixed(3),
-  timestamp
+  timestamp,
 })
 
 
@@ -60,7 +60,7 @@ export const useMain = defineStore('main', {
     url: initialState.url,
     errorMessage: null,
     user: null,
-    locale: 'fi'
+    locale: 'fi',
   }),
   getters: {
     isLoggedIn(state) {
@@ -76,7 +76,7 @@ export const useMain = defineStore('main', {
     },
     async getUser () {
       const api = mande(atob(this.url))
-      const path = `/users.json`;
+      const path = `/users.json`
       const users = await api.get(path)
       for (let i = 0; i < Object.values(users || {}).length; i++) {
         try {
@@ -121,8 +121,8 @@ export const useMain = defineStore('main', {
     },
     logout () {
       if (process.client) {
-        window.localStorage.removeItem('encryptionKey');
-        window.localStorage.removeItem('url');
+        window.localStorage.removeItem('encryptionKey')
+        window.localStorage.removeItem('url')
       }
       this.errorMessage = null
       this.encryptionKey = null
@@ -135,7 +135,7 @@ export const useMain = defineStore('main', {
       try {
         this.startLoading('latest')
         const api = mande(atob(this.url))
-        const path = `/latest.json`;
+        const path = `/latest.json`
         const latest = await api.get(path)
         try {
           this.latest = (await Promise.all(Object.values(latest)
@@ -155,22 +155,22 @@ export const useMain = defineStore('main', {
       try {
         this.startLoading('measurements')
         const api = mande(atob(this.url))
-        const path = start && end ? encodeURI(`/measurements.json?orderBy="timestamp"&startAt="${new Date(start).toISOString()}"&endAt="${new Date(end).toISOString()}"`) : '/measurements.json';
+        const path = start && end ? encodeURI(`/measurements.json?orderBy="timestamp"&startAt="${new Date(start).toISOString()}"&endAt="${new Date(end).toISOString()}"`) : '/measurements.json'
         const measurements = await api.get(path)
         this.measurements = (await Promise.all(Object.values(measurements)
           .map(async value => JSON.parse(await decryptData(value.encryptedData, this.encryptionKey, value.iv)))))
           .map(convertMeasurement).sort((a, b) => {
             // Convert the timestamps to Date objects
-            const dateA = new Date(a.timestamp);
-            const dateB = new Date(b.timestamp);
+            const dateA = new Date(a.timestamp)
+            const dateB = new Date(b.timestamp)
 
             // Compare the dates and return either -1, 0, or 1
             // depending on whether dateA is before, the same as,
             // or after dateB
-            if (dateA < dateB) return -1;
-            if (dateA > dateB) return 1;
-            return 0;
-          });
+            if (dateA < dateB) return -1
+            if (dateA > dateB) return 1
+            return 0
+          })
         this.timestamp = new Date().toISOString()
         if (start && end) {
           this.start = start
@@ -184,6 +184,6 @@ export const useMain = defineStore('main', {
         console.log(err.message)
         this.stopLoading('measurements')
       }
-    }
-  }
+    },
+  },
 })

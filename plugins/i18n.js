@@ -5,16 +5,17 @@ import * as fiMain from '../locales/fi/main.js'
 import * as enCharts from '../locales/en/charts.js'
 import * as fiCharts from '../locales/fi/charts.js'
 
+// eslint-disable-next-line no-undef
 export default defineNuxtPlugin(({ vueApp }) => {
   const messages = {
     en: {
       ...enMain.default,
-      ...enCharts.default
+      ...enCharts.default,
     },
     fi: {
       ...fiMain.default,
-      ...fiCharts.default
-    }
+      ...fiCharts.default,
+    },
   }
 
   const i18n = createI18n({
@@ -25,21 +26,21 @@ export default defineNuxtPlugin(({ vueApp }) => {
     locales: [
       {
         code: 'fi',
-        name: 'Finnish'
+        name: 'Finnish',
       },
       {
         code: 'en',
-        name: 'English'
-      }
+        name: 'English',
+      },
     ],
     detectBrowserLanguage: {
       useCookie: true,
-      cookieKey: 'i18n_redirected'
+      cookieKey: 'i18n_redirected',
     },
     vueI18n: {
-      fallbackLocale: 'fi'
+      fallbackLocale: 'fi',
     },
-    messages
+    messages,
   })
   vueApp.use(i18n)
 })

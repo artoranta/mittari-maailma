@@ -36,20 +36,20 @@
 </template>
 
 <script>
-import { uniq } from 'lodash';
-import { mapState } from 'pinia';
-import fiCharts from "~/locales/fi/charts.js";
-import enCharts from "~/locales/en/charts.js";
+import { uniq } from 'lodash'
+import { mapState } from 'pinia'
+import fiCharts from "~/locales/fi/charts.js"
+import enCharts from "~/locales/en/charts.js"
 
 Date.prototype.stdTimezoneOffset = function () {
-  const jan = new Date(this.getFullYear(), 0, 1);
-  const jul = new Date(this.getFullYear(), 6, 1);
-  return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-};
+  const jan = new Date(this.getFullYear(), 0, 1)
+  const jul = new Date(this.getFullYear(), 6, 1)
+  return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset())
+}
 
 Date.prototype.isDstObserved = function () {
-  return this.getTimezoneOffset() < this.stdTimezoneOffset();
-};
+  return this.getTimezoneOffset() < this.stdTimezoneOffset()
+}
 
 const formatDate = (value, reverse) => {
   return reverse ? `${value.split('.').reverse().join('-')}T00:00:00.000Z` : value.split('T')[0].split('-').reverse().join('.')
@@ -68,18 +68,18 @@ const convertFinnishDateToISOString = (input, reverse = false, convert = false) 
   // Finnish UTC +2 or +3.
   // new Date(1610031289498); -2
   // new Date(1631092909080); -3 (Daylight Saving Time)
-  let output;
+  let output
   if (typeof input === 'string' && convert) {
-    input = input.replace(' ', 'T');
+    input = input.replace(' ', 'T')
   }
-  input = convert ? new Date(input) : input;
+  input = convert ? new Date(input) : input
   if (input.isDstObserved()) {
-    output = new Date(input.setHours(input.getHours() - (reverse ? -3 : 3)));
+    output = new Date(input.setHours(input.getHours() - (reverse ? -3 : 3)))
   } else {
-    output = new Date(input.setHours(input.getHours() - (reverse ? -2 : 2)));
+    output = new Date(input.setHours(input.getHours() - (reverse ? -2 : 2)))
   }
-  return output.toISOString();
-};
+  return output.toISOString()
+}
 
 export default {
   name: 'Reports',
@@ -87,25 +87,35 @@ export default {
   },
   data() {
     return {
-      columns: [{
-        key: 'date',
-        label: this.$t('_reports.date'),
-        sortable: true
-      }, {
-        key: 'name',
-        label: this.$t('_reports.name'),
-        sortable: true
-      }, ...(this.$device.isMobile ? [] : [{
-        key: 'range',
-        label: this.$t('_reports.range'),
-      }]), {
-        key: 'consumption',
-        label: this.$t('_reports.consumption'),
-        sortable: true
-      }, ...(this.$device.isMobile ? [] : [{
-        key: 'count',
-        label: this.$t('_reports.count'),
-      }])]
+      columns: [
+        {
+          key: 'date',
+          label: this.$t('_reports.date'),
+          sortable: true,
+        },
+        {
+          key: 'name',
+          label: this.$t('_reports.name'),
+          sortable: true,
+        },
+        ...(this.$device.isMobile ? [] : [
+          {
+            key: 'range',
+            label: this.$t('_reports.range'),
+          },
+        ]),
+        {
+          key: 'consumption',
+          label: this.$t('_reports.consumption'),
+          sortable: true,
+        },
+        ...(this.$device.isMobile ? [] : [
+          {
+            key: 'count',
+            label: this.$t('_reports.count'),
+          },
+        ]),
+      ],
     }
   },
   computed: {
@@ -114,10 +124,10 @@ export default {
       isLoading: (store) => !!store.loading.length,
       noFullHistory: (store) => !!store.start && !!store.end,
       days: (store) => Object.values(store.measurements.reduce((acc, cur) => {
-        const name = cur.name || cur.id;
-        const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true);
+        const name = cur.name || cur.id
+        const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true)
         const date = formatDate(timestamp)
-        const value = Number.parseFloat(cur.total_m3);
+        const value = Number.parseFloat(cur.total_m3)
         if (!Object.hasOwnProperty.call(acc, name)) {
           acc[name] = {}
         }
@@ -126,16 +136,21 @@ export default {
             name,
             date,
             data: [],
-          };
+          }
         }
-        acc[name][date].data.push([timestamp, value]);
-        return acc;
+        acc[name][date].data.push([timestamp,
+          value,
+        ])
+        return acc
       }, {})).map(o => Object.values(o)).flat().map(row => ({
         ...row,
-        range: [Math.min(...row.data.map(([_ts, vl]) => vl)), Math.max(...row.data.map(([_ts, vl]) => vl))].join(' → '),
+        range: [
+          Math.min(...row.data.map(([_ts, vl]) => vl)),
+          Math.max(...row.data.map(([_ts, vl]) => vl)),
+        ].join(' → '),
         consumption: (Math.max(...row.data.map(([_ts, vl]) => vl)) - Math.min(...row.data.map(([_ts, vl]) => vl))).toFixed(3),
         count: row.data.length,
-        data: undefined
+        data: undefined,
       })),
     }),
   },
@@ -167,25 +182,25 @@ export default {
         chart: {
           stacked: false,
           zoom: {
-            enabled: false
+            enabled: false,
           },
           height: 350,
           type: 'bar',
           locales: [
             fiCharts._charts.lang,
-            enCharts._charts.lang
+            enCharts._charts.lang,
           ],
-          defaultLocale: 'fi'
+          defaultLocale: 'fi',
         },
         dataLabels: {
-          enabled: true
+          enabled: true,
         },
         xaxis: {
           categories,
-        }
+        },
       }
-    }
-  }
+    },
+  },
 }
 
 </script>

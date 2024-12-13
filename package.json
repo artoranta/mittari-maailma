@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint-fix": "eslint --fix --ignore-path .gitignore ."
   },
   "dependencies": {
     "@nuxt/fonts": "^0.10.3",
@@ -30,7 +31,8 @@
   "devDependencies": {
     "@nuxt/eslint-config": "^0.7.2",
     "@nuxtjs/eslint-config": "^12.0.0",
-    "@nuxtjs/eslint-module": "^4.1.0"
+    "@nuxtjs/eslint-module": "^4.1.0",
+    "@stylistic/eslint-plugin": "^2.12.1"
   },
   "overrides": {
     "vue": "latest"

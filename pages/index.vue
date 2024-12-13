@@ -52,7 +52,7 @@
 
 <script>
 import { mapState } from 'pinia'
-import dayjs from "dayjs";
+import dayjs from "dayjs"
 
 import meterRed from '~/assets/images/meter-red.svg'
 import meterBlue from '~/assets/images/meter-blue.svg'
@@ -63,7 +63,7 @@ export default {
   data() {
     return {
       meterRed,
-      meterBlue
+      meterBlue,
     }
   },
   computed: {
@@ -72,7 +72,7 @@ export default {
       latest: (store) => store.latest,
       timestamp: (store) => store.timestamp,
       isLoggedIn: (store) => store.isLoggedIn,
-    })
+    }),
   },
   watch: {},
   created () {
@@ -93,8 +93,8 @@ export default {
       } catch (err) {
         console.log(err.message)
       }
-    }
-  }
+    },
+  },
 }
 
 </script>

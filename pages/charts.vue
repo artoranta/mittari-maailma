@@ -58,7 +58,7 @@
 </template>
 
 <script>
-import { mapState } from 'pinia';
+import { mapState } from 'pinia'
 import { fi } from 'date-fns/locale'
 import { sub, format, formatDuration, intervalToDuration } from 'date-fns'
 import enCharts from '~/locales/en/charts'
@@ -68,20 +68,65 @@ import DatePicker from '~/components/DatePicker.vue'
 export default {
   name: 'Charts',
   components: {
-    DatePicker
+    DatePicker,
   },
   data() {
     return {
       ranges: [
-        { label: this.$t('_charts.range.twelveHours'), duration: { hours: 12 } },
-        { label: this.$t('_charts.range.day'), duration: { days: 1 } },
-        { label: this.$t('_charts.range.twoDays'), duration: { days: 2 } },
-        { label: this.$t('_charts.range.week'), duration: { days: 7 } },
-        { label: this.$t('_charts.range.twoWeeks'), duration: { days: 14 } },
-        { label: this.$t('_charts.range.month'), duration: { months: 1 } },
-        { label: this.$t('_charts.range.threeMonths'), duration: { months: 3 } },
-        { label: this.$t('_charts.range.sixMonths'), duration: { months: 6 } },
-        { label: this.$t('_charts.range.year'), duration: { years: 1 } }
+        {
+          label: this.$t('_charts.range.twelveHours'),
+          duration: {
+            hours: 12,
+          },
+        },
+        {
+          label: this.$t('_charts.range.day'),
+          duration: {
+            days: 1,
+          },
+        },
+        {
+          label: this.$t('_charts.range.twoDays'),
+          duration: {
+            days: 2,
+          },
+        },
+        {
+          label: this.$t('_charts.range.week'),
+          duration: {
+            days: 7,
+          },
+        },
+        {
+          label: this.$t('_charts.range.twoWeeks'),
+          duration: {
+            days: 14,
+          },
+        },
+        {
+          label: this.$t('_charts.range.month'),
+          duration: {
+            months: 1,
+          },
+        },
+        {
+          label: this.$t('_charts.range.threeMonths'),
+          duration: {
+            months: 3,
+          },
+        },
+        {
+          label: this.$t('_charts.range.sixMonths'),
+          duration: {
+            months: 6,
+          },
+        },
+        {
+          label: this.$t('_charts.range.year'),
+          duration: {
+            years: 1,
+          },
+        },
       ],
       options: {
         chart: {
@@ -89,57 +134,66 @@ export default {
           type: 'line',
           locales: [
             fiCharts._charts.lang,
-            enCharts._charts.lang
+            enCharts._charts.lang,
           ],
-          defaultLocale: 'fi'
+          defaultLocale: 'fi',
         },
         stroke: {
           show: true,
           curve: 'straight',
-          width: 2
+          width: 2,
         },
         xaxis: {
           labels: {
             rotate: 0,
             hideOverlappingLabels: true,
-            datetimeUTC: false
+            datetimeUTC: false,
           },
           type: 'datetime',
         },
         yaxis: {
           axisBorder: {
-            show: true
+            show: true,
           },
           axisTicks: {
-            show: true
-          }
+            show: true,
+          },
         },
         grid: {
           show: true,
           strokeDashArray: 2,
           xaxis: {
             lines: {
-              show: true
-            }
+              show: true,
+            },
           },
           yaxis: {
             lines: {
-              show: true
-            }
-          }
+              show: true,
+            },
+          },
         },
         tooltip: {
           enabled: true,
           x: {
             show: true,
-            format: 'd.M klo HH:mm'
-          }
-        }
+            format: 'd.M klo HH:mm',
+          },
+        },
       },
-      selected: { start: sub(new Date(), { days: 1 }), end: new Date() },
-      locales: { fi, en: undefined },
-      selectedRange: { start: sub(new Date(), { days: 1 }), end: new Date() },
-      initialized: false
+      selected: {
+        start: sub(new Date(), { days: 1 }),
+        end: new Date(),
+      },
+      locales: {
+        fi,
+        en: undefined,
+      },
+      selectedRange: {
+        start: sub(new Date(), { days: 1 }),
+        end: new Date(),
+      },
+      initialized: false,
     }
   },
   computed: {
@@ -148,18 +202,21 @@ export default {
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
       series: (store) => Object.values(store.measurements.reduce((acc, cur) => {
-        const name = cur.name || cur.id;
-        const timestamp = new Date(cur.timestamp).getTime();
-        const value = Number.parseFloat(cur.total_m3);
+        const name = cur.name || cur.id
+        const timestamp = new Date(cur.timestamp).getTime()
+        const value = Number.parseFloat(cur.total_m3)
         if (!Object.hasOwnProperty.call(acc, name)) {
           acc[name] = {
             name,
             data: [],
-            color: name === 'lämmin' ? '#ff3d36' : '#52a1fe'
-          };
+            color: name === 'lämmin' ? '#ff3d36' : '#52a1fe',
+          }
         }
-        acc[name].data.push([timestamp, value]);
-        return acc;
+        acc[name].data.push([
+          timestamp,
+          value,
+        ])
+        return acc
       }, {})),
     }),
   },
@@ -193,13 +250,19 @@ export default {
     },
     async selectRange(duration) {
       this.initialized = true
-      this.selectedRange = { start: sub(new Date(), duration), end: new Date() }
-      this.selected = { start: sub(new Date(), duration), end: new Date() }
+      this.selectedRange = {
+        start: sub(new Date(), duration),
+        end: new Date(),
+      }
+      this.selected = {
+        start: sub(new Date(), duration),
+        end: new Date(),
+      }
       await this.getMeasurements(this.selected.start, this.selected.end)
     },
     format(...args) {
       return format(...args, ...(this.locales[this.locale] ? [{
-        locale: this.locales[this.locale]
+        locale: this.locales[this.locale],
       }] : []))
     },
     onDayClick () {
@@ -211,12 +274,14 @@ export default {
         cb()
         this.$nextTick(() => {
           this.getMeasurements(this.selected.start, this.selected.end)
-        });
+        })
       }
     },
     getAnnotations (name) {
       const s = this.series.find(i => i.name === name)
-      const annotations = { yaxis: [], xaxis: [] }
+      const annotations = { yaxis: [],
+        xaxis: [],
+      }
       if (s) {
         const avg = Math.max(...s.data.map(([_ts, vl]) => vl))
         const dff = (Math.max(...s.data.map(([_ts, vl]) => vl)) - Math.min(...s.data.map(([_ts, vl]) => vl)))
@@ -231,14 +296,14 @@ export default {
             offsetX: 10,
             offsetY: -5,
             style: {
-              fontSize: '11px'
-            }
-          }
+              fontSize: '11px',
+            },
+          },
         })
       }
       return annotations
-    }
-  }
+    },
+  },
 }
 
 </script>

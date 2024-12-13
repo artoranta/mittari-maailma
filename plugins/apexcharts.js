@@ -1,5 +1,6 @@
-import VueApexCharts from 'vue3-apexcharts';
+import VueApexCharts from 'vue3-apexcharts'
 
+// eslint-disable-next-line no-undef
 export default defineNuxtPlugin((nuxtApp) => {
-  nuxtApp.vueApp.use(VueApexCharts);
+  nuxtApp.vueApp.use(VueApexCharts)
 })

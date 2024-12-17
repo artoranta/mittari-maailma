@@ -1,5 +1,7 @@
 export default {
   lang: 'en',
+  loading: 'Loading...',
+  noItems: 'No items.',
   _links: {
     home: 'Home',
     charts: 'Charts',
@@ -24,5 +26,12 @@ export default {
     range: 'Range',
     consumption: 'Consumption (m³)',
     count: 'Count (kpl)',
+    _mobile: {
+      date: 'Date',
+      name: 'Name',
+      range: 'Range',
+      consumption: 'Consumption (m³)',
+      count: 'Count (kpl)',
+    },
   },
 }

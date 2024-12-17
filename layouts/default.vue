@@ -44,14 +44,14 @@ export default {
             to: '/',
           },
           {
-            label: this.$device.isMobile ? undefined : this.$t('_links.charts'),
+            label: this.$device.isMobile ? undefined : this.$t('_links.reports'),
             icon: 'i-heroicons-chart-bar',
-            to: '/charts',
+            to: '/reports',
           },
           {
-            label: this.$device.isMobile ? undefined : this.$t('_links.reports'),
-            icon: 'i-heroicons-rectangle-stack',
-            to: '/reports',
+            label: this.$device.isMobile ? undefined : this.$t('_links.charts'),
+            icon: 'i-heroicons-presentation-chart-line',
+            to: '/charts',
           },
         ],
         [

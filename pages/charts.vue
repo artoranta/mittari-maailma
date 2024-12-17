@@ -14,7 +14,7 @@
         <div class="flex items-center divide-x divide-gray-200 dark:divide-gray-800">
           <div class="flex flex-col py-4">
             <UButton
-              v-for="(range, index) in ranges"
+              v-for="(range, index) in rangeOptions"
               :key="index"
               :label="range.label"
               color="gray"
@@ -78,57 +78,57 @@ export default {
   },
   data() {
     return {
-      ranges: [
+      rangeOptions: [
         {
-          label: this.$t('_charts.range.twelveHours'),
+          label: this.t('_charts.range.twelveHours'),
           duration: {
             hours: 12,
           },
         },
         {
-          label: this.$t('_charts.range.day'),
+          label: this.t('_charts.range.day'),
           duration: {
             days: 1,
           },
         },
         {
-          label: this.$t('_charts.range.twoDays'),
+          label: this.t('_charts.range.twoDays'),
           duration: {
             days: 2,
           },
         },
         {
-          label: this.$t('_charts.range.week'),
+          label: this.t('_charts.range.week'),
           duration: {
             days: 7,
           },
         },
         {
-          label: this.$t('_charts.range.twoWeeks'),
+          label: this.t('_charts.range.twoWeeks'),
           duration: {
             days: 14,
           },
         },
         {
-          label: this.$t('_charts.range.month'),
+          label: this.t('_charts.range.month'),
           duration: {
             months: 1,
           },
         },
         {
-          label: this.$t('_charts.range.threeMonths'),
+          label: this.t('_charts.range.threeMonths'),
           duration: {
             months: 3,
           },
         },
         {
-          label: this.$t('_charts.range.sixMonths'),
+          label: this.t('_charts.range.sixMonths'),
           duration: {
             months: 6,
           },
         },
         {
-          label: this.$t('_charts.range.year'),
+          label: this.t('_charts.range.year'),
           duration: {
             years: 1,
           },
@@ -209,7 +209,7 @@ export default {
     }),
     label() {
       const rangeLabel = `${format(this.selected.start, 'd MMM, yyy')} - ${format(this.selected.end, 'd MMM, yyy')}`
-      const selectedRangeLabel = (this.ranges.find(range => formatDuration(this.selectedDuration) === formatDuration(range.duration)) || {}).label
+      const selectedRangeLabel = (this.rangeOptions.find(range => formatDuration(this.selectedDuration) === formatDuration(range.duration)) || {}).label
       return this.selectedDuration
         ? `${selectedRangeLabel} (${rangeLabel})`
         : rangeLabel
@@ -256,19 +256,22 @@ export default {
       }] : []))
     },
     async onDayClick () {
+      this.selectedDuration = false
+    },
+    async closeDatePicker (cb) {
+      cb()
       if (!this.selectedDuration) {
         this.selected = {
           start: startOfDay(this.selected.start),
           end: endOfDay(this.selected.end),
         }
       }
-      this.selectedDuration = false
-    },
-    async closeDatePicker (cb) {
-      cb()
       if (this.start !== this.selected.start || this.end !== this.selected.end) {
         await this.getMeasurements(this.selected.start, this.selected.end)
       }
+    },
+    t (key) {
+      return this.$t(this.$device.isMobile ? `${key.split('.').slice(0, -1).join('.')}._mobile.${key.split('.').pop()}` : key)
     },
   },
 }

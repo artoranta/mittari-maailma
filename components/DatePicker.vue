@@ -24,6 +24,10 @@ const props = defineProps({
     type: Number,
     default: 1,
   },
+  maxDate: {
+    type: Date,
+    default: new Date(),
+  },
 })
 
 const emit = defineEmits([
@@ -51,6 +55,7 @@ const attrs = {
   'first-day-of-week': 2,
 }
 
+/*
 const rules = ref([
   {
     hours: 0,
@@ -65,6 +70,7 @@ const rules = ref([
     milliseconds: 999,
   },
 ])
+*/
 
 function onDayClick(value: any, event: MouseEvent): void {
   const target = event.target as HTMLElement
@@ -78,8 +84,8 @@ function onDayClick(value: any, event: MouseEvent): void {
     v-if="date && (date as DatePickerRangeObject)?.start && (date as DatePickerRangeObject)?.end"
     v-model.range="date"
     :locale="props.locale"
+    :max-date="props.maxDate"
     :columns="props.columns"
-    :rules="rules"
     v-bind="{ ...attrs, ...$attrs }"
     @dayclick="onDayClick"
   />
@@ -87,7 +93,7 @@ function onDayClick(value: any, event: MouseEvent): void {
     v-else
     v-model="date"
     :locale="props.locale"
-    :rules="rules"
+    :max-date="props.maxDate"
     v-bind="{ ...attrs, ...$attrs }"
     @dayclick="onDayClick"
   />

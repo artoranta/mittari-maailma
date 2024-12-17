@@ -8,7 +8,7 @@
         icon="i-heroicons-calendar-days-20-solid"
         style="width: 100%; display: flex; justify-content: center; margin-bottom: 0.75rem;"
       >
-        {{ format(selected.start, 'd MMM, yyy') }} - {{ format(selected.end, 'd MMM, yyy') }}
+        {{ label }}
       </UButton>
       <template #panel="{ close }">
         <div class="flex items-center divide-x divide-gray-200 dark:divide-gray-800">
@@ -50,7 +50,7 @@
       :key="s.name"
       :ref="s.name"
       :height="options.chart.height"
-      :options="{ ...options, annotations: getAnnotations(s.name) }"
+      :options="{ ...options, annotations: annotations[s.name] }"
       :series="[s]"
       @dblclick="resetZoom($event, s.name)"
     />
@@ -60,10 +60,16 @@
 <script>
 import { mapState } from 'pinia'
 import { fi } from 'date-fns/locale'
-import { sub, format, formatDuration, intervalToDuration } from 'date-fns'
+import { sub, format, formatDuration, startOfDay, endOfDay } from 'date-fns'
 import enCharts from '~/locales/en/charts'
 import fiCharts from '~/locales/fi/charts'
 import DatePicker from '~/components/DatePicker.vue'
+
+const defaultDuration = { days: 1 }
+const defaultRange = {
+  start: sub(new Date(), defaultDuration),
+  end: new Date(),
+}
 
 export default {
   name: 'Charts',
@@ -181,19 +187,12 @@ export default {
           },
         },
       },
-      selected: {
-        start: sub(new Date(), { days: 1 }),
-        end: new Date(),
-      },
       locales: {
         fi,
         en: undefined,
       },
-      selectedRange: {
-        start: sub(new Date(), { days: 1 }),
-        end: new Date(),
-      },
-      initialized: false,
+      selected: defaultRange,
+      selectedDuration: defaultDuration,
     }
   },
   computed: {
@@ -201,24 +200,20 @@ export default {
       locale: (store) => store.locale,
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
-      series: (store) => Object.values(store.measurements.reduce((acc, cur) => {
-        const name = cur.name || cur.id
-        const timestamp = new Date(cur.timestamp).getTime()
-        const value = Number.parseFloat(cur.total_m3)
-        if (!Object.hasOwnProperty.call(acc, name)) {
-          acc[name] = {
-            name,
-            data: [],
-            color: name === 'lämmin' ? '#ff3d36' : '#52a1fe',
-          }
-        }
-        acc[name].data.push([
-          timestamp,
-          value,
-        ])
-        return acc
-      }, {})),
     }),
+    ...mapState(useMeasurements, {
+      start: (store) => store.start,
+      end: (store) => store.end,
+      series: (store) => store.series,
+      annotations: (store) => store.annotations,
+    }),
+    label() {
+      const rangeLabel = `${format(this.selected.start, 'd MMM, yyy')} - ${format(this.selected.end, 'd MMM, yyy')}`
+      const selectedRangeLabel = (this.ranges.find(range => formatDuration(this.selectedDuration) === formatDuration(range.duration)) || {}).label
+      return this.selectedDuration
+        ? `${selectedRangeLabel} (${rangeLabel})`
+        : rangeLabel
+    },
   },
   watch: {},
   async created () {
@@ -231,8 +226,8 @@ export default {
   methods: {
     async getMeasurements(start, end) {
       try {
-        const main = useMain()
-        await main.getMeasurements(start, end)
+        const measurements = useMeasurements()
+        await measurements.getMeasurements(start, end)
       } catch (err) {
         console.log(err.message)
       }
@@ -246,62 +241,34 @@ export default {
       }
     },
     isRangeSelected (duration) {
-      return this.selectedRange ? formatDuration(intervalToDuration(this.selectedRange)) === formatDuration(duration) : false
+      return formatDuration(this.selectedDuration) === formatDuration(duration)
     },
     async selectRange(duration) {
-      this.initialized = true
-      this.selectedRange = {
-        start: sub(new Date(), duration),
-        end: new Date(),
-      }
+      this.selectedDuration = duration
       this.selected = {
         start: sub(new Date(), duration),
         end: new Date(),
       }
-      await this.getMeasurements(this.selected.start, this.selected.end)
     },
     format(...args) {
       return format(...args, ...(this.locales[this.locale] ? [{
         locale: this.locales[this.locale],
       }] : []))
     },
-    onDayClick () {
-      this.initialized = true
-      this.selectedRange = null
+    async onDayClick () {
+      if (!this.selectedDuration) {
+        this.selected = {
+          start: startOfDay(this.selected.start),
+          end: endOfDay(this.selected.end),
+        }
+      }
+      this.selectedDuration = false
     },
-    closeDatePicker (cb) {
-      if (this.initialized) {
-        cb()
-        this.$nextTick(() => {
-          this.getMeasurements(this.selected.start, this.selected.end)
-        })
+    async closeDatePicker (cb) {
+      cb()
+      if (this.start !== this.selected.start || this.end !== this.selected.end) {
+        await this.getMeasurements(this.selected.start, this.selected.end)
       }
-    },
-    getAnnotations (name) {
-      const s = this.series.find(i => i.name === name)
-      const annotations = { yaxis: [],
-        xaxis: [],
-      }
-      if (s) {
-        const avg = Math.max(...s.data.map(([_ts, vl]) => vl))
-        const dff = (Math.max(...s.data.map(([_ts, vl]) => vl)) - Math.min(...s.data.map(([_ts, vl]) => vl)))
-        annotations.yaxis.push({
-          y: avg,
-          borderColor: '#cecece',
-          borderWidth: 2,
-          label: {
-            text: dff.toFixed(3) + 'm³',
-            position: 'left',
-            textAnchor: 'right',
-            offsetX: 10,
-            offsetY: -5,
-            style: {
-              fontSize: '11px',
-            },
-          },
-        })
-      }
-      return annotations
     },
   },
 }

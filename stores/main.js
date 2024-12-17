@@ -1,24 +1,17 @@
 import { defineStore } from 'pinia'
 import { mande } from 'mande'
+import { fi } from 'date-fns/locale'
+import { setDefaultOptions } from 'date-fns'
+import { useMeasurements } from './measurements'
 
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),
   url: !process.client ? undefined : window.localStorage.getItem('url'),
 }
 
-const offsets = {
-  '06696698': 82.502,
-  '06697364': 176.820,
-}
-
-const names = {
-  '06696698': 'lämmin',
-  '06697364': 'kylmä',
-}
-
 const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
 
-async function decryptData(encryptedData, base64Key, base64Iv) {
+export const decryptData = async (encryptedData, base64Key, base64Iv) => {
   const key = await crypto.subtle.importKey(
     'raw',
     Uint8Array.from(atob(base64Key), c => c.charCodeAt(0)),
@@ -38,23 +31,9 @@ async function decryptData(encryptedData, base64Key, base64Iv) {
   return new TextDecoder().decode(decryptedBuffer)
 }
 
-const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
-  id,
-  media,
-  meter,
-  name: names[id] || '',
-  total_m3: (Math.round((total_m3 + (offsets[id] || 0)) * 1000) / 1000).toFixed(3),
-  timestamp,
-})
-
-
 export const useMain = defineStore('main', {
   state: () => ({
     loading: [],
-    latest: [],
-    measurements: [],
-    start: null,
-    end: null,
     timestamp: new Date().toISOString(),
     encryptionKey: initialState.encryptionKey,
     url: initialState.url,
@@ -75,6 +54,7 @@ export const useMain = defineStore('main', {
       this.loading = this.loading.filter(i => i !== value)
     },
     async getUser () {
+      await setDefaultOptions({ locale: fi })
       const api = mande(atob(this.url))
       const path = `/users.json`
       const users = await api.get(path)
@@ -88,16 +68,16 @@ export const useMain = defineStore('main', {
         }
       }
     },
-    async loginWithToken (url, encryptionKey, callback) {
+    async loginWithToken(url, encryptionKey, callback) {
       try {
         this.user = null
         this.startLoading('login')
         this.encryptionKey = encryptionKey || this.encryptionKey
         this.url = url || this.url
         const isValidBase64 = base64regex.test(this.url)
-        const main = useMain()
+        const measurements = useMeasurements()
         if (isValidBase64) {
-          await main.getUser()
+          await this.getUser()
         }
         if (!this.user) {
           this.encryptionKey = null
@@ -108,7 +88,7 @@ export const useMain = defineStore('main', {
             window.localStorage.setItem('encryptionKey', this.encryptionKey)
             window.localStorage.setItem('url', this.url)
           }
-          await main.getLatest()
+          await measurements.getLatest()
           this.stopLoading('login')
           callback()
         }
@@ -119,7 +99,7 @@ export const useMain = defineStore('main', {
         this.stopLoading('login')
       }
     },
-    logout () {
+    logout() {
       if (process.client) {
         window.localStorage.removeItem('encryptionKey')
         window.localStorage.removeItem('url')
@@ -130,60 +110,6 @@ export const useMain = defineStore('main', {
       this.user = null
       this.latest = []
       this.measurements = []
-    },
-    async getLatest() {
-      try {
-        this.startLoading('latest')
-        const api = mande(atob(this.url))
-        const path = `/latest.json`
-        const latest = await api.get(path)
-        try {
-          this.latest = (await Promise.all(Object.values(latest)
-            .map(async value => JSON.parse(await decryptData(value.encryptedData, this.encryptionKey, value.iv)))))
-            .map(convertMeasurement)
-        } catch (err) {
-          console.log(err.message)
-        }
-        this.timestamp = new Date().toISOString()
-        this.stopLoading('latest')
-      } catch (err) {
-        console.log(err.message)
-        this.stopLoading('latest')
-      }
-    },
-    async getMeasurements(start, end) {
-      try {
-        this.startLoading('measurements')
-        const api = mande(atob(this.url))
-        const path = start && end ? encodeURI(`/measurements.json?orderBy="timestamp"&startAt="${new Date(start).toISOString()}"&endAt="${new Date(end).toISOString()}"`) : '/measurements.json'
-        const measurements = await api.get(path)
-        this.measurements = (await Promise.all(Object.values(measurements)
-          .map(async value => JSON.parse(await decryptData(value.encryptedData, this.encryptionKey, value.iv)))))
-          .map(convertMeasurement).sort((a, b) => {
-            // Convert the timestamps to Date objects
-            const dateA = new Date(a.timestamp)
-            const dateB = new Date(b.timestamp)
-
-            // Compare the dates and return either -1, 0, or 1
-            // depending on whether dateA is before, the same as,
-            // or after dateB
-            if (dateA < dateB) return -1
-            if (dateA > dateB) return 1
-            return 0
-          })
-        this.timestamp = new Date().toISOString()
-        if (start && end) {
-          this.start = start
-          this.end = end
-        } else {
-          this.start = null
-          this.end = null
-        }
-        this.stopLoading('measurements')
-      } catch (err) {
-        console.log(err.message)
-        this.stopLoading('measurements')
-      }
     },
   },
 })

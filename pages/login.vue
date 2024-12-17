@@ -69,8 +69,8 @@ export default {
   watch: {},
   async created () {
     if (this.isLoggedIn) {
-      const main = useMain()
-      await main.getLatest()
+      const measurements = useMeasurements()
+      await measurements.getLatest()
       const router = useRouter()
       await router.push('/')
     } else {

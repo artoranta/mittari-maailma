@@ -69,9 +69,11 @@ export default {
   computed: {
     ...mapState(useMain, {
       isLoading: (store) => !!store.loading.length,
+      isLoggedIn: (store) => store.isLoggedIn,
+    }),
+    ...mapState(useMeasurements, {
       latest: (store) => store.latest,
       timestamp: (store) => store.timestamp,
-      isLoggedIn: (store) => store.isLoggedIn,
     }),
   },
   watch: {},
@@ -88,8 +90,8 @@ export default {
     },
     async getLatest() {
       try {
-        const main = useMain()
-        await main.getLatest()
+        const measurements = useMeasurements()
+        await measurements.getLatest()
       } catch (err) {
         console.log(err.message)
       }

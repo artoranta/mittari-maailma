@@ -13,10 +13,10 @@
       />
     </div>
     <apexchart
-      v-if="days.length && !noFullHistory"
+      v-if="rows.length"
       :height="350"
-      :options="getOptions(uniq((days || []).map(d => d.date)))"
-      :series="Object.values(days.reduce((acc, { name, consumption }) => {
+      :options="options"
+      :series="Object.values(rows.reduce((acc, { name, consumption }) => {
         if (!Object.hasOwnProperty.call(acc, name)) {
           acc[name] = {
             name,
@@ -30,56 +30,14 @@
     />
     <UTable
       :columns="columns"
-      :rows="days"
+      :rows="rows"
     />
   </UCard>
 </template>
 
 <script>
-import { uniq } from 'lodash'
 import { mapState } from 'pinia'
-import fiCharts from "~/locales/fi/charts.js"
-import enCharts from "~/locales/en/charts.js"
-
-Date.prototype.stdTimezoneOffset = function () {
-  const jan = new Date(this.getFullYear(), 0, 1)
-  const jul = new Date(this.getFullYear(), 6, 1)
-  return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset())
-}
-
-Date.prototype.isDstObserved = function () {
-  return this.getTimezoneOffset() < this.stdTimezoneOffset()
-}
-
-const formatDate = (value, reverse) => {
-  return reverse ? `${value.split('.').reverse().join('-')}T00:00:00.000Z` : value.split('T')[0].split('-').reverse().join('.')
-}
-
-/**
- * Converts date object which has finnish UTC(+2 OR +3) as UTC0 to valid date object and vice versa.
- *
- * @param {Date} input
- * @param {Boolean} [reverse]
- * @param {Boolean} [convert]
- * @return {String}
- */
-const convertFinnishDateToISOString = (input, reverse = false, convert = false) => {
-  // Examples.
-  // Finnish UTC +2 or +3.
-  // new Date(1610031289498); -2
-  // new Date(1631092909080); -3 (Daylight Saving Time)
-  let output
-  if (typeof input === 'string' && convert) {
-    input = input.replace(' ', 'T')
-  }
-  input = convert ? new Date(input) : input
-  if (input.isDstObserved()) {
-    output = new Date(input.setHours(input.getHours() - (reverse ? -3 : 3)))
-  } else {
-    output = new Date(input.setHours(input.getHours() - (reverse ? -2 : 2)))
-  }
-  return output.toISOString()
-}
+import { sub } from 'date-fns'
 
 export default {
   name: 'Reports',
@@ -87,6 +45,10 @@ export default {
   },
   data() {
     return {
+      selected: {
+        start: sub(new Date(), { days: 7 }),
+        end: new Date(),
+      },
       columns: [
         {
           key: 'date',
@@ -122,82 +84,27 @@ export default {
     ...mapState(useMain, {
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
-      noFullHistory: (store) => !!store.start && !!store.end,
-      days: (store) => Object.values(store.measurements.reduce((acc, cur) => {
-        const name = cur.name || cur.id
-        const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true)
-        const date = formatDate(timestamp)
-        const value = Number.parseFloat(cur.total_m3)
-        if (!Object.hasOwnProperty.call(acc, name)) {
-          acc[name] = {}
-        }
-        if (!Object.hasOwnProperty.call(acc[name], date)) {
-          acc[name][date] = {
-            name,
-            date,
-            data: [],
-          }
-        }
-        acc[name][date].data.push([timestamp,
-          value,
-        ])
-        return acc
-      }, {})).map(o => Object.values(o)).flat().map(row => ({
-        ...row,
-        range: [
-          Math.min(...row.data.map(([_ts, vl]) => vl)),
-          Math.max(...row.data.map(([_ts, vl]) => vl)),
-        ].join(' → '),
-        consumption: (Math.max(...row.data.map(([_ts, vl]) => vl)) - Math.min(...row.data.map(([_ts, vl]) => vl))).toFixed(3),
-        count: row.data.length,
-        data: undefined,
-      })),
+    }),
+    ...mapState(useReports, {
+      rows: (store) => store.rows,
+      options: (store) => store.options,
     }),
   },
   watch: {},
   async created () {
-    if (this.isLoggedIn && (this.noFullHistory || this.days.length === 0)) {
-      await this.getMeasurements()
+    if (this.isLoggedIn && this.rows.length === 0) {
+      await this.getRows(this.selected.start, this.selected.end)
     }
   },
   mounted() {},
   beforeUnmount () {},
   methods: {
-    async getMeasurements(start, end) {
+    async getRows(start, end) {
       try {
-        const main = useMain()
-        await main.getMeasurements(start, end)
+        const reports = useReports()
+        await reports.getRows(start, end)
       } catch (err) {
         console.log(err.message)
-      }
-    },
-    formatDate (...args) {
-      return formatDate(...args)
-    },
-    uniq (array) {
-      return uniq(array)
-    },
-    getOptions(categories) {
-      return {
-        chart: {
-          stacked: false,
-          zoom: {
-            enabled: false,
-          },
-          height: 350,
-          type: 'bar',
-          locales: [
-            fiCharts._charts.lang,
-            enCharts._charts.lang,
-          ],
-          defaultLocale: 'fi',
-        },
-        dataLabels: {
-          enabled: true,
-        },
-        xaxis: {
-          categories,
-        },
       }
     },
   },

@@ -19,6 +19,8 @@ export const formatDate = (value, reverse) => {
   return reverse ? `${value.split('.').reverse().join('-')}T00:00:00.000Z` : value.split('T')[0].split('-').reverse().join('.')
 }
 
+const price = 4.675
+
 /**
  * Converts date object which has finnish UTC(+2 OR +3) as UTC0 to valid date object and vice versa.
  *
@@ -52,6 +54,7 @@ export const useReports = defineStore('reports', {
     end: null,
     groupedBy: 'day', //hour, day, week, month
     merged: false,
+    valueType: 'consumption', //cost
   }),
   getters: {
     rows(state) {
@@ -70,7 +73,7 @@ export const useReports = defineStore('reports', {
           week: cur.id,
           month: cur.id,
         }[state.groupedBy]
-        const value = Number.parseFloat(cur.total_m3)
+        const value = this.valueType === 'consumption' ? Number.parseFloat(cur.total_m3) : Number.parseFloat(cur.total_m3) * price
         if (!Object.hasOwnProperty.call(acc, name)) {
           acc[name] = {}
         }
@@ -152,15 +155,18 @@ export const useReports = defineStore('reports', {
   },
   actions: {
     async getRows(start, end) {
-      this.measurements = await fetchMeasurements(start, end)
       this.start = start
       this.end = end
+      this.measurements = await fetchMeasurements(start, end)
     },
     async setGroupedBy(value) {
       this.groupedBy = value
     },
     async setMerged(value) {
       this.merged = value
+    },
+    async setValueType(value) {
+      this.valueType = value
     },
   },
 })

@@ -3,9 +3,13 @@ export default {
     options: {
       merged: 'Merged',
       separately: 'Separately',
+      cost: 'Cost (€)',
+      consumption: 'Consumption (m³)',
       _mobile: {
-        merged: 'Merged',
-        separately: 'Sep.',
+        merged: '∑',
+        separately: '...',
+        cost: '€',
+        consumption: 'm³',
       },
     },
     range: {

@@ -52,6 +52,11 @@
         @change="selectGroupedBy(groupedByOptions[$event].value)"
       />
       <UTabs
+        :default-index="selectedValueTypeIndex"
+        :items="valueTypeOptions"
+        @change="selectValueType(valueTypeOptions[$event].value)"
+      />
+      <UTabs
         :default-index="selectedMergedIndex"
         :items="mergedOptions"
         @change="selectMerged(mergedOptions[$event].value)"
@@ -59,7 +64,7 @@
     </div>
     <apexchart
       v-if="rows.length && !isLoading"
-      :key="`${selectedGroupedBy}-${selectedMerged}-${JSON.stringify(selected)}-${rows.length}-${start.getTime()}-${end.getTime()}-${selectedRange}`"
+      :key="`${selectedGroupedBy}-${selectedMerged}-${selectedValueType}-${JSON.stringify(selected)}-${rows.length}-${start.getTime()}-${end.getTime()}-${selectedRange}`"
       ref="reportChart"
       :height="350"
       :options="options"
@@ -111,6 +116,18 @@ export default {
         {
           label: this.t('_charts.options.merged'),
           value: true,
+          index: 1,
+        },
+      ],
+      valueTypeOptions: [
+        {
+          label: this.t('_charts.options.consumption'),
+          value: 'consumption',
+          index: 0,
+        },
+        {
+          label: this.t('_charts.options.cost'),
+          value: 'cost',
           index: 1,
         },
       ],
@@ -227,6 +244,7 @@ export default {
       options: (store) => store.options,
       selectedGroupedBy: (store) => store.groupedBy,
       selectedMerged: (store) => store.merged,
+      selectedValueType: (store) => store.valueType,
     }),
     selectedGroupedByIndex() {
       const selection = this.groupedByOptions.find(i => i.value === this.selectedGroupedBy)
@@ -234,6 +252,10 @@ export default {
     },
     selectedMergedIndex() {
       const selection = this.mergedOptions.find(i => i.value === this.selectedMerged)
+      return selection ? selection.index : 0
+    },
+    selectedValueTypeIndex() {
+      const selection = this.valueTypeOptions.find(i => i.value === this.selectedValueType)
       return selection ? selection.index : 0
     },
     label() {
@@ -278,6 +300,10 @@ export default {
     async selectMerged(value) {
       const reports = useReports()
       await reports.setMerged(value)
+    },
+    async selectValueType(value) {
+      const reports = useReports()
+      await reports.setValueType(value)
     },
     async onDayClick () {
       this.selectedRange = false

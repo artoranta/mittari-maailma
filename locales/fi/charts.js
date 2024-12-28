@@ -3,9 +3,13 @@ export default {
     options: {
       merged: 'Yhdistetty',
       separately: 'Erikseen',
+      cost: 'Hinta (€)',
+      consumption: 'Kulutus (m³)',
       _mobile: {
-        merged: 'Yhd.',
-        separately: 'Erikseen',
+        merged: '∑',
+        separately: '...',
+        cost: '€',
+        consumption: 'm³',
       },
     },
     range: {

@@ -2,12 +2,16 @@
 
 Mittari maailma is a Nuxt 3-based web application for browsing water consumption data from Apator meters. It provides a lightweight setup for small-scale deployments, enabling efficient data retrieval and visualization for a limited number of meters.
 
+![Home](assets/images/home.png)
+
 ## Features
 
 - **User Authentication**: Login credentials are used as the encryption key (username) and database URL (password).
 - **Encrypted Data Storage**: Water consumption data is securely encrypted in the Firebase database.
 - **Time-Range Queries**: Measurements include a plaintext timestamp field for efficient range-based queries.
 - **Lightweight Setup**: Designed for small-scale deployments, leveraging Raspberry Pi and ioBroker to collect data from Apator water consumption meters.
+
+![Reports](assets/images/reports.png)
 
 ## Technical Details
 
@@ -25,6 +29,8 @@ Mittari maailma is a Nuxt 3-based web application for browsing water consumption
 ### Application
 - Built with Nuxt 3 for a seamless user experience.
 - Decrypts and displays consumption data using user-provided credentials.
+
+![Charts](assets/images/charts.png)
 
 ## Setup
 

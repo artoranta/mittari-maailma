@@ -82,6 +82,7 @@ export default {
       await router.push('/login')
     } else if (!this.user) {
       const main = useMain()
+      await main.initAuth()
       await main.getUser()
     }
   },

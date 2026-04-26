@@ -15,6 +15,8 @@ export default {
     username: 'Käyttäjätunnus',
     password: 'Salasana',
     login: 'Kirjaudu',
+    continue: 'Jatka',
+    cancel: 'Peruuta',
   },
   _logout: {
     logout: 'Uloskirjautuminen',
@@ -24,12 +26,14 @@ export default {
     name: 'Nimi',
     range: 'Arvoväli',
     consumption: 'Kulutus (m³)',
+    cost: 'Hinta (€)',
     count: 'Lukemamäärä (kpl)',
     _mobile: {
       date: 'Pvm.',
       name: 'Nimi',
       range: 'Arvoväli',
       consumption: 'Kulutus (m³)',
+      cost: 'Hinta (€)',
       count: 'Lukemamäärä (kpl)',
     },
   },

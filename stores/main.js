@@ -3,6 +3,7 @@ import { mande } from 'mande'
 import { fi } from 'date-fns/locale'
 import { setDefaultOptions } from 'date-fns'
 import { useMeasurements } from './measurements'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),
@@ -31,32 +32,59 @@ export const decryptData = async (encryptedData, base64Key, base64Iv) => {
   return new TextDecoder().decode(decryptedBuffer)
 }
 
+let tokenPromise = null
+
 export const useMain = defineStore('main', {
   state: () => ({
     loading: [],
     timestamp: new Date().toISOString(),
     encryptionKey: initialState.encryptionKey,
     url: initialState.url,
+    token: null,
     errorMessage: null,
     user: null,
+    authUser: null,
     locale: 'fi',
+    unsubAuth: null
   }),
   getters: {
     isLoggedIn(state) {
-      return state.url && state.encryptionKey
+      return state.url && state.encryptionKey && state.authUser
     },
+    isAuthenticated(state) {
+      return !!state.authUser
+    }
   },
   actions: {
+    initAuth() {
+      const auth = getAuth()
+
+      // avoid multiple listeners
+      if (this.unsubAuth) return
+
+      this.unsubAuth = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          this.setAuthUser(user)
+        } else {
+          this.setAuthUser(null)
+        }
+        this.stopLoading('auth')
+      })
+    },
     startLoading(value) {
       this.loading.push(value)
     },
     stopLoading(value) {
       this.loading = this.loading.filter(i => i !== value)
     },
+    async setAuthUser(user) {
+      this.authUser = user
+    },
     async getUser () {
       await setDefaultOptions({ locale: fi })
+      const token = await this.getFirebaseToken()
       const api = mande(atob(this.url))
-      const path = `/users.json`
+      const path = `/users.json?auth=${token}`
       const users = await api.get(path)
       for (let i = 0; i < Object.values(users || {}).length; i++) {
         try {
@@ -67,6 +95,21 @@ export const useMain = defineStore('main', {
           console.log(err.message)
         }
       }
+    },
+    getFirebaseToken() {
+      const user = this.authUser
+      if (!user) return null
+
+      // avoid multiple simultaneous refresh calls
+      if (!tokenPromise) {
+        tokenPromise = user.getIdToken().then((token) => {
+          this.token = token
+          tokenPromise = null
+          return token
+        })
+      }
+
+      return tokenPromise
     },
     async loginWithToken(url, encryptionKey, callback) {
       try {
@@ -103,11 +146,15 @@ export const useMain = defineStore('main', {
       if (process.client) {
         window.localStorage.removeItem('encryptionKey')
         window.localStorage.removeItem('url')
+        const auth = getAuth()
+        auth.signOut()
       }
       this.errorMessage = null
       this.encryptionKey = null
       this.url = null
       this.user = null
+      this.token = null
+      this.authUser = null
       this.latest = []
       this.measurements = []
     },

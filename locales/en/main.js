@@ -16,6 +16,8 @@ export default {
     username: 'Username',
     password: 'Password',
     login: 'Login',
+    continue: 'Continue',
+    cancel: 'Cancel',
   },
   _logout: {
     logout: 'Logout',
@@ -31,6 +33,7 @@ export default {
       name: 'Name',
       range: 'Range',
       consumption: 'Consumption (m³)',
+      cost: 'Cost (€)',
       count: 'Count (kpl)',
     },
   },

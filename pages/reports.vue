@@ -45,21 +45,24 @@
         </div>
       </template>
     </UPopover>
-    <div style="display: flex; flex-direction: row; justify-content: space-between;">
+    <div class="tabs-wrapper">
       <UTabs
         :default-index="selectedGroupedByIndex"
         :items="groupedByOptions"
         @change="selectGroupedBy(groupedByOptions[$event].value)"
+        class="responsive-tabs"
       />
       <UTabs
         :default-index="selectedValueTypeIndex"
         :items="valueTypeOptions"
         @change="selectValueType(valueTypeOptions[$event].value)"
+        class="responsive-tabs"
       />
       <UTabs
         :default-index="selectedMergedIndex"
         :items="mergedOptions"
         @change="selectMerged(mergedOptions[$event].value)"
+        class="responsive-tabs"
       />
     </div>
     <apexchart
@@ -71,6 +74,7 @@
       :series="series"
     />
     <UTable
+      :key="selectedValueType"
       :loading="isLoading || !rows.length"
       :empty-state="{
         icon: 'i-heroicons:circle-stack-20-solid',
@@ -195,35 +199,6 @@ export default {
           end: sub(endOfYear(new Date()), { years: 1 }),
         },
       ],
-      columns: [
-        {
-          key: 'date',
-          label: this.t('_reports.date'),
-          sortable: true,
-        },
-        {
-          key: 'name',
-          label: this.t('_reports.name'),
-          sortable: true,
-        },
-        ...(this.$device.isMobile ? [] : [
-          {
-            key: 'range',
-            label: this.t('_reports.range'),
-          },
-        ]),
-        {
-          key: 'consumption',
-          label: this.t('_reports.consumption'),
-          sortable: true,
-        },
-        ...(this.$device.isMobile ? [] : [
-          {
-            key: 'count',
-            label: this.t('_reports.count'),
-          },
-        ]),
-      ],
       selected: {
         start: startOfWeek(new Date()),
         end: endOfDay(new Date()),
@@ -264,6 +239,37 @@ export default {
       return selectedRangeLabel
         ? `${selectedRangeLabel} (${rangeLabel})`
         : rangeLabel
+    },
+    columns() {
+      return [
+        {
+          key: 'date',
+          label: this.t('_reports.date'),
+          sortable: true,
+        },
+        {
+          key: 'name',
+          label: this.t('_reports.name'),
+          sortable: true,
+        },
+        ...(this.$device.isMobile ? [] : [
+          {
+            key: 'range',
+            label: this.t('_reports.range'),
+          },
+        ]),
+        {
+          key: 'consumption',
+          label: this.t(`_reports.${this.selectedValueType}`),
+          sortable: true,
+        },
+        ...(this.$device.isMobile ? [] : [
+          {
+            key: 'count',
+            label: this.t('_reports.count'),
+          },
+        ]),
+      ]
     },
   },
   watch: {},
@@ -328,7 +334,7 @@ export default {
 
 </script>
 
-<style>
+<style scoped>
 .charts-card {
   min-height: 450px;
   width: 100%;
@@ -345,5 +351,28 @@ export default {
 }
 .spinner {
   color: #e5e5e5;
+}
+
+.tabs-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .tabs-wrapper {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .responsive-tabs :deep() .ui-tabs {
+    font-size: 0.75rem;
+  }
+  
+  .responsive-tabs :deep() .ui-button {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
 }
 </style>

@@ -81,10 +81,12 @@ export default {
     if (!this.isLoggedIn && this.path !== 'login') {
       const router = useRouter()
       await router.push('/login')
-    } else if (!this.user && this.isAuthenticated) {
+    } else if (!this.user) {
       const main = useMain()
       await main.initAuth()
-      await main.getUser()
+      if (this.isLoggedIn) {
+        await main.getUser()
+      }
     }
   },
   methods: {

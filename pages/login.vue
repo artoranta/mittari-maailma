@@ -105,7 +105,7 @@ export default {
       if (Object.hasOwnProperty.call(route.query, 'password')) {
         this.password = route.query.password
       }
-      if (this.password && this.token) {
+      if (this.password && this.isAuthenticated) {
         await this.login()
       }
     }
@@ -134,7 +134,7 @@ export default {
         if (result) {
           const user = result.user
           await main.setAuthUser(user)
-          if (this.isLoggedIn) {
+          if (this.password) {
             await this.login()
           }
         }

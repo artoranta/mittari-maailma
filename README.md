@@ -6,7 +6,7 @@ Mittari maailma is a Nuxt 3-based web application for browsing water consumption
 
 ## Features
 
-- **User Authentication**: Login credentials are used as the encryption key (username) and database URL (password).
+- **User Authentication**: Login credentials are used as the encryption key (password).
 - **Encrypted Data Storage**: Water consumption data is securely encrypted in the Firebase database.
 - **Time-Range Queries**: Measurements include a plaintext timestamp field for efficient range-based queries.
 - **Lightweight Setup**: Designed for small-scale deployments, leveraging Raspberry Pi and ioBroker to collect data from Apator water consumption meters.
@@ -22,7 +22,7 @@ Mittari maailma is a Nuxt 3-based web application for browsing water consumption
     - Wireless M-BUS ioBroker adapter handles message retrieval via the dongle.
     - A custom JS-script processes raw data from the adapter and sends it to a Google Firebase database.
 3. **Database Structure**:
-    - **Users Collection**: Contains user credentials (username matches the encryption key used during login).
+    - **Users Collection**: Contains user credentials (password matches the encryption key used during login).
     - **Latest Collection**: Contains the latest measurement for each meter ID, JSON-data stored as an encrypted string in the `encryptedData` field.
     - **Measurements Collection**: Stores encrypted meter consumption values and plaintext timestamps.
 
@@ -70,7 +70,7 @@ Mittari maailma is a Nuxt 3-based web application for browsing water consumption
 ### Firebase Configuration
 - Add your Firebase database URL and authentication details to ioBroker script to send data.
 - Ensure the database follows the expected structure:
-    - **Users** collection with usernames.
+    - **Users** collection with users.
     - **Latest** collection with the latest encrypted data for each meter ID.
     - **Measurements** collection with `encryptedData` and `timestamp` fields.
 

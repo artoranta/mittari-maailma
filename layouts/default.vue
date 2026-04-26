@@ -68,6 +68,7 @@ export default {
     ...mapState(useMain, {
       isLoggedIn: (store) => store.isLoggedIn,
       user: (store) => store.user,
+      isAuthenticated: (store) => store.isAuthenticated,
     }),
     path: () => {
       const route = useRoute()
@@ -80,7 +81,7 @@ export default {
     if (!this.isLoggedIn && this.path !== 'login') {
       const router = useRouter()
       await router.push('/login')
-    } else if (!this.user) {
+    } else if (!this.user && this.isAuthenticated) {
       const main = useMain()
       await main.initAuth()
       await main.getUser()

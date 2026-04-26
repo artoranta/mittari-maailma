@@ -26,7 +26,7 @@ export const fetchMeasurements = async (start, end) => {
   try {
     main.startLoading('measurements')
     const token = await main.getFirebaseToken()
-    const api = mande(atob(main.url))
+    const api = mande(main.url)
     const path = start && end ? encodeURI(`/measurements.json?orderBy="timestamp"&startAt="${new Date(start).toISOString()}"&endAt="${new Date(end).toISOString()}"&auth=${token}`) : `/measurements.json?auth=${token}`
     const measurements = await api.get(path)
     main.stopLoading('measurements')
@@ -120,7 +120,7 @@ export const useMeasurements = defineStore('measurements', {
       try {
         main.startLoading('latest')
         const token = await main.getFirebaseToken()
-        const api = mande(atob(main.url))
+        const api = mande(main.url)
         const path = `/latest.json?auth=${token}`
         const latest = await api.get(path)
         try {

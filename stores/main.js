@@ -3,14 +3,26 @@ import { mande } from 'mande'
 import { fi } from 'date-fns/locale'
 import { setDefaultOptions } from 'date-fns'
 import { useMeasurements } from './measurements'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { initializeApp } from 'firebase/app'
+import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth'
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD4OKFodCl19-HJ-BblEE_4hRWlE0qXIHU", // Public, not secret.
+  authDomain: "mittari-maailma.firebaseapp.com",
+  databaseURL: "https://mittari-maailma-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mittari-maailma",
+  storageBucket: "mittari-maailma.firebasestorage.app",
+  messagingSenderId: "919189723518",
+  appId: "1:919189723518:web:19071e8307749f346d3b2f"
+}
+
+const app = await initializeApp(firebaseConfig)
 
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),
-  url: !process.client ? undefined : window.localStorage.getItem('url'),
+  url: !process.client ? undefined : firebaseConfig.databaseURL,
+  token: !process.client ? undefined : window.localStorage.getItem('token'),
 }
-
-const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
 
 export const decryptData = async (encryptedData, base64Key, base64Iv) => {
   const key = await crypto.subtle.importKey(
@@ -40,7 +52,7 @@ export const useMain = defineStore('main', {
     timestamp: new Date().toISOString(),
     encryptionKey: initialState.encryptionKey,
     url: initialState.url,
-    token: null,
+    token: initialState.token,
     errorMessage: null,
     user: null,
     authUser: null,
@@ -49,15 +61,20 @@ export const useMain = defineStore('main', {
   }),
   getters: {
     isLoggedIn(state) {
-      return state.url && state.encryptionKey && state.authUser
+      return state.encryptionKey && state.token
     },
     isAuthenticated(state) {
       return !!state.authUser
+    },
+    firebaseConfig() {
+      return firebaseConfig
     }
   },
   actions: {
-    initAuth() {
-      const auth = getAuth()
+    async initAuth() {
+      const auth = getAuth(app)
+
+      await setPersistence(auth, browserLocalPersistence)
 
       // avoid multiple listeners
       if (this.unsubAuth) return
@@ -83,7 +100,7 @@ export const useMain = defineStore('main', {
     async getUser () {
       await setDefaultOptions({ locale: fi })
       const token = await this.getFirebaseToken()
-      const api = mande(atob(this.url))
+      const api = mande(this.url)
       const path = `/users.json?auth=${token}`
       const users = await api.get(path)
       for (let i = 0; i < Object.values(users || {}).length; i++) {
@@ -98,12 +115,17 @@ export const useMain = defineStore('main', {
     },
     getFirebaseToken() {
       const user = this.authUser
-      if (!user) return null
+      if (!user && this.token) {
+        return this.token
+      } else if (!user) {
+        return null
+      }
 
       // avoid multiple simultaneous refresh calls
       if (!tokenPromise) {
         tokenPromise = user.getIdToken().then((token) => {
           this.token = token
+          window.localStorage.setItem('token', this.token)
           tokenPromise = null
           return token
         })
@@ -111,17 +133,13 @@ export const useMain = defineStore('main', {
 
       return tokenPromise
     },
-    async loginWithToken(url, encryptionKey, callback) {
+    async loginWithToken(encryptionKey, callback) {
       try {
         this.user = null
         this.startLoading('login')
         this.encryptionKey = encryptionKey || this.encryptionKey
-        this.url = url || this.url
-        const isValidBase64 = base64regex.test(this.url)
         const measurements = useMeasurements()
-        if (isValidBase64) {
-          await this.getUser()
-        }
+        await this.getUser()
         if (!this.user) {
           this.encryptionKey = null
           this.errorMessage = 'Invalid credentials'
@@ -129,7 +147,6 @@ export const useMain = defineStore('main', {
         } else {
           if (process.client) {
             window.localStorage.setItem('encryptionKey', this.encryptionKey)
-            window.localStorage.setItem('url', this.url)
           }
           await measurements.getLatest()
           this.stopLoading('login')
@@ -146,12 +163,12 @@ export const useMain = defineStore('main', {
       if (process.client) {
         window.localStorage.removeItem('encryptionKey')
         window.localStorage.removeItem('url')
+        window.localStorage.removeItem('token')
         const auth = getAuth()
         auth.signOut()
       }
       this.errorMessage = null
       this.encryptionKey = null
-      this.url = null
       this.user = null
       this.token = null
       this.authUser = null

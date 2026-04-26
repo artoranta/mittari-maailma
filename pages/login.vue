@@ -9,14 +9,6 @@
       </div>
       <UInput
         v-if="isAuthenticated"
-        v-model="username"
-        color="primary"
-        variant="outline"
-        type="username"
-        :placeholder="$t('_login.username')"
-      />
-      <UInput
-        v-if="isAuthenticated"
         v-model="password"
         color="primary"
         variant="outline"
@@ -28,7 +20,7 @@
         color="gray"
         :label="$t('_login.continue')"
         size="sm"
-        :disabled="isLoading || !username || !password"
+        :disabled="isLoading || !password"
         :loading="isLoading"
         block
         @click="login()"
@@ -80,31 +72,15 @@
 </template>
 
 <script>
-import { mapState } from "pinia"
+import { mapState } from 'pinia'
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyD4OKFodCl19-HJ-BblEE_4hRWlE0qXIHU", // Public, not secret.
-  authDomain: "mittari-maailma.firebaseapp.com",
-  databaseURL: "https://mittari-maailma-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "mittari-maailma",
-  storageBucket: "mittari-maailma.firebasestorage.app",
-  messagingSenderId: "919189723518",
-  appId: "1:919189723518:web:19071e8307749f346d3b2f"
-};
-
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
-const provider = new GoogleAuthProvider()
 
 export default {
   name: 'Login',
   components: {},
   data() {
     return {
-      username: '',
       password: ''
     }
   },
@@ -114,6 +90,7 @@ export default {
       isLoggedIn: (store) => store.isLoggedIn,
       isAuthenticated: (store) => store.isAuthenticated,
       errorMessage: (store) => store.errorMessage,
+      firebaseConfig: (store) => store.firebaseConfig,
     }),
   },
   watch: {},
@@ -125,13 +102,10 @@ export default {
       await router.push('/')
     } else {
       const route = useRoute()
-      if (Object.hasOwnProperty.call(route.query, 'username')) {
-        this.username = route.query.username
-      }
       if (Object.hasOwnProperty.call(route.query, 'password')) {
         this.password = route.query.password
       }
-      if (this.username && this.password && this.isAuthenticated) {
+      if (this.password && this.token) {
         await this.login()
       }
     }
@@ -141,7 +115,7 @@ export default {
   methods: {
     async login() {
       const main = useMain()
-      await main.loginWithToken(this.password, this.username, () => {
+      await main.loginWithToken(this.password, () => {
         const router = useRouter()
         router.push('/')
       })
@@ -153,6 +127,9 @@ export default {
     async handleGoogleLogin() {
       try {
         const main = useMain()
+        const app = await initializeApp(this.firebaseConfig)
+        const auth = getAuth(app)
+        const provider = new GoogleAuthProvider()
         const result = await signInWithPopup(auth, provider)
         if (result) {
           const user = result.user

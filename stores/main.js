@@ -16,7 +16,7 @@ const firebaseConfig = {
   appId: "1:919189723518:web:19071e8307749f346d3b2f"
 }
 
-const app = await initializeApp(firebaseConfig)
+const app = initializeApp(firebaseConfig)
 
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),

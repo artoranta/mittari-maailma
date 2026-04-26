@@ -127,7 +127,7 @@ export default {
     async handleGoogleLogin() {
       try {
         const main = useMain()
-        const app = await initializeApp(this.firebaseConfig)
+        const app = initializeApp(this.firebaseConfig)
         const auth = getAuth(app)
         const provider = new GoogleAuthProvider()
         const result = await signInWithPopup(auth, provider)

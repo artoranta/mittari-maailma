@@ -13,19 +13,19 @@
           <div class="meter-reading">
             {{ meter.total_m3.replace('.', '') }}
           </div>
-          <div class="meter-reading-dot">
+          <div :class="`${meter.media === 'water' ? 'meter-reading-dot' : 'meter-reading-dot-electricity'}`">
             ,
           </div>
-          <div class="meter-reading-timestamp">
+          <div :class="`${meter.media === 'water' ? 'meter-reading-timestamp' : 'meter-reading-timestamp-electricity'}`">
             {{ formatDate(meter.timestamp) }}
           </div>
-          <div class="meter-reading-id">
+          <div :class="`${meter.media === 'water' ? 'meter-reading-id' : 'meter-reading-id-electricity'}`">
             {{ meter.id }}
           </div>
           <img
             class="meter-picture"
             alt="hot-water"
-            :src="meter.name === 'lämmin' ? meterRed : meterBlue"
+            :src="meter.name === 'lämmin' ? meterRed : (meter.media === 'water' ? meterBlue : electricityMeter)"
           >
         </div>
       </div>
@@ -56,6 +56,7 @@ import dayjs from "dayjs"
 
 import meterRed from '~/assets/images/meter-red.svg'
 import meterBlue from '~/assets/images/meter-blue.svg'
+import electricityMeter from '~/assets/images/meter.svg'
 
 export default {
   name: 'Index',
@@ -64,6 +65,7 @@ export default {
     return {
       meterRed,
       meterBlue,
+      electricityMeter,
     }
   },
   computed: {
@@ -159,6 +161,17 @@ export default {
   font-family:  "Lucida Console", Monaco, monospace;
 }
 
+.meter-reading-dot-electricity {
+  position: relative;
+  z-index: 1000;
+  margin-top: -2rem;
+  margin-right: 4rem;
+  text-align: right;
+  font-size: 10cqmin;
+  letter-spacing: .15rem;
+  font-family:  "Lucida Console", Monaco, monospace;
+}
+
 .meter-reading-timestamp {
   position: relative;
   z-index: 1000;
@@ -171,11 +184,35 @@ export default {
   font-family:  "Lucida Console", Monaco, monospace;
 }
 
+.meter-reading-timestamp-electricity {
+  position: relative;
+  z-index: 1000;
+  margin-top: 2.9rem;
+  margin-left: 3.5rem;
+  text-align: right;
+  max-width: 8rem;
+  font-size: 5cqmin;
+  letter-spacing: .15rem;
+  font-family:  "Lucida Console", Monaco, monospace;
+}
+
 .meter-reading-id {
   position: relative;
   z-index: 1000;
   margin-top: -7.5rem;
   margin-left: 1.8rem;
+  text-align: right;
+  max-width: 8rem;
+  font-size: 5cqmin;
+  letter-spacing: .15rem;
+  font-family:  "Lucida Console", Monaco, monospace;
+}
+
+.meter-reading-id-electricity {
+  position: relative;
+  z-index: 1000;
+  margin-top: -5.4rem;
+  margin-left: 3.5rem;
   text-align: right;
   max-width: 8rem;
   font-size: 5cqmin;

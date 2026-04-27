@@ -13,8 +13,8 @@
             { label: $t('_settings.mockDataOptions.On'), value: '1' },
             { label: $t('_settings.mockDataOptions.Off'), value: '0' },
           ]"
-          :value="mockData"
-          @update:value="selectMockData"
+          :model-value="mockData"
+          @update:model-value="selectMockData"
         />
       </div>
     </div>

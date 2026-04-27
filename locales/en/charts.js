@@ -5,11 +5,15 @@ export default {
       separately: 'Separately',
       cost: 'Cost (€)',
       consumption: 'Consumption (m³)',
+      water: 'Water',
+      electricity: 'Electricity',
       _mobile: {
         merged: '∑',
         separately: '...',
         cost: '€',
         consumption: 'm³',
+        water: 'Water',
+        electricity: 'Electricity',
       },
     },
     range: {

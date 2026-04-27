@@ -7,22 +7,74 @@ const offsets = {
   '06697364': 176.820,
 }
 
-const names = {
-  '06696698': 'lämmin',
-  '06697364': 'kylmä',
+const names = (id, media) => {
+  console.log(media, id)
+  return media === 'water' ? {
+    '01234567': 'lämmin',
+    '07654321': 'kylmä',
+    '06696698': 'lämmin',
+    '06697364': 'kylmä',
+  }[id] : {
+    '01234567': 'lämmitystolppa',
+    '07654321': 'varasto',
+  }[id]
 }
 
 export const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
   id,
   media,
   meter,
-  name: names[id] || '',
+  name: names(id, media) || '',
   total_m3: (Math.round((total_m3 + (offsets[id] || 0)) * 1000) / 1000).toFixed(3),
   timestamp,
 })
 
+const generateMockData = (start, end, dataType, hours = 'all') => {
+  const data = []
+  const current = new Date(start)
+  let total1 = 0
+  let total2 = 0
+  let nextIncrement1 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
+  let nextIncrement2 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
+  let minutesElapsed1 = 0
+  let minutesElapsed2 = 0
+  
+  const isActiveHour = (date) => {
+    const hour = date.getHours()
+    if (hours === 'day') return hour >= 6 && hour < 22
+    if (hours === 'night') return hour >= 22 || hour < 6
+    return true
+  }
+  
+  while (current.getTime() <= end.getTime()) {
+    if (isActiveHour(current)) {
+      if (minutesElapsed1 >= nextIncrement1) {
+        total1 += Math.random() * 1
+        minutesElapsed1 = 0
+        nextIncrement1 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
+      }
+      if (minutesElapsed2 >= nextIncrement2) {
+        total2 += Math.random() * 1
+        minutesElapsed2 = 0
+        nextIncrement2 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
+      }
+      minutesElapsed1 += 15
+      minutesElapsed2 += 15
+    }
+    
+    data.push({ id: '01234567', timestamp: current.toISOString(), media: dataType, total_m3: total1.toFixed(3) })
+    data.push({ id: '07654321', timestamp: current.toISOString(), media: dataType, total_m3: total2.toFixed(3) })
+    
+    current.setMinutes(current.getMinutes() + 15)
+  }
+  return data
+}
+
 export const fetchMeasurements = async (start, end) => {
   const main = useMain()
+  if (main.mockData === '1') {
+    return Object.values(generateMockData(start, end, main.dataType, main.dataType === 'water' ? 'day' : 'night')).map(convertMeasurement)
+  }
   try {
     main.startLoading('measurements')
     const token = await main.getFirebaseToken()
@@ -33,6 +85,7 @@ export const fetchMeasurements = async (start, end) => {
     return (await Promise.all(Object.values(measurements)
       .map(async value => JSON.parse(await decryptData(value.encryptedData, main.encryptionKey, value.iv)))))
       .map(convertMeasurement).sort((a, b) => {
+        console.log(a)
         // Convert the timestamps to Date objects
         const dateA = new Date(a.timestamp)
         const dateB = new Date(b.timestamp)
@@ -117,6 +170,14 @@ export const useMeasurements = defineStore('measurements', {
   actions: {
     async getLatest() {
       const main = useMain()
+      if (main.mockData === '1') {
+        return this.latest = Object.values([
+          { id: '01234567', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
+          { id: '07654321', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
+          { id: '01234567', timestamp: new Date().toISOString(), media: 'electricity', total_m3: Math.random().toFixed(3) * 10 }, // total_kWh
+          { id: '07654321', timestamp: new Date().toISOString(), media: 'electricity', total_m3: Math.random().toFixed(3) * 10 } // total_kWh
+        ].map(convertMeasurement))
+      }
       try {
         main.startLoading('latest')
         const token = await main.getFirebaseToken()

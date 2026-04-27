@@ -23,6 +23,7 @@ const initialState = {
   url: !process.client ? undefined : firebaseConfig.databaseURL,
   token: !process.client ? undefined : window.localStorage.getItem('token'),
   mockData: !process.client ? undefined : window.localStorage.getItem('mockData') || '0',
+  dataType: !process.client ? undefined : window.localStorage.getItem('dataType') || 'water',
 }
 
 export const decryptData = async (encryptedData, base64Key, base64Iv) => {
@@ -60,6 +61,7 @@ export const useMain = defineStore('main', {
     locale: 'fi',
     unsubAuth: null,
     mockData: initialState.mockData,
+    dataType: initialState.dataType,
   }),
   getters: {
     isLoggedIn(state) {
@@ -103,6 +105,11 @@ export const useMain = defineStore('main', {
       const mockData = value === '1' ? '1' : '0'
       this.mockData = mockData
       window.localStorage.setItem('mockData', mockData)
+    },
+    setDataType(value) {
+      const dataType = value === 'electricity' ? 'electricity' : 'water'
+      this.dataType = dataType
+      window.localStorage.setItem('dataType', dataType)
     },
     async getUser () {
       await setDefaultOptions({ locale: fi })

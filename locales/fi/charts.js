@@ -5,11 +5,15 @@ export default {
       separately: 'Erikseen',
       cost: 'Hinta (€)',
       consumption: 'Kulutus (m³)',
+      water: 'Vesi',
+      electricity: 'Sähkö',
       _mobile: {
         merged: '∑',
         separately: '...',
         cost: '€',
         consumption: 'm³',
+        water: 'Vesi',
+        electricity: 'Sähkö',
       },
     },
     range: {

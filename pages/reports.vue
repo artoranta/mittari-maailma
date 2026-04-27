@@ -45,6 +45,12 @@
         </div>
       </template>
     </UPopover>
+    <UTabs
+      :default-index="selectedDataTypeIndex"
+      :items="dataTypeOptions"
+      @change="selectDataType(groupedByOptions[$event].value)"
+      class="responsive-tabs"
+    />
     <div class="tabs-wrapper">
       <UTabs
         :default-index="selectedGroupedByIndex"
@@ -135,6 +141,18 @@ export default {
           index: 1,
         },
       ],
+      dataTypeOptions: [
+        {
+          label: this.t('_charts.options.water'),
+          value: 'water',
+          index: 0,
+        },
+        {
+          label: this.t('_charts.options.electricity'),
+          value: 'electricity',
+          index: 1,
+        },
+      ],
       groupedByOptions: [
         {
           label: this.t('_charts.group.hour'),
@@ -210,6 +228,7 @@ export default {
     ...mapState(useMain, {
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
+      selectedDataType: (store) => store.dataType,
     }),
     ...mapState(useReports, {
       start: (store) => store.start,
@@ -219,7 +238,7 @@ export default {
       options: (store) => store.options,
       selectedGroupedBy: (store) => store.groupedBy,
       selectedMerged: (store) => store.merged,
-      selectedValueType: (store) => store.valueType,
+      selectedValueType: (store) => store.valueType
     }),
     selectedGroupedByIndex() {
       const selection = this.groupedByOptions.find(i => i.value === this.selectedGroupedBy)
@@ -231,6 +250,10 @@ export default {
     },
     selectedValueTypeIndex() {
       const selection = this.valueTypeOptions.find(i => i.value === this.selectedValueType)
+      return selection ? selection.index : 0
+    },
+    selectedDataTypeIndex() {
+      const selection = this.dataTypeOptions.find(i => i.value === this.selectedDataType)
       return selection ? selection.index : 0
     },
     label() {
@@ -310,6 +333,12 @@ export default {
     async selectValueType(value) {
       const reports = useReports()
       await reports.setValueType(value)
+    },
+    async selectDataType(value) {
+      const main = useMain()
+      await main.setDataType(value)
+      const measurements = useMeasurements()
+      await measurements.getMeasurements(this.selected.start, this.selected.end)
     },
     async onDayClick () {
       this.selectedRange = false

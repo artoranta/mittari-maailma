@@ -129,7 +129,6 @@ export default {
   justify-content: center;
   gap: 2rem;
   flex-wrap: wrap;
-
 }
 .meter {
   position: relative;

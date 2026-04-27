@@ -53,6 +53,11 @@ export default {
             icon: 'i-heroicons-presentation-chart-line',
             to: '/charts',
           },
+          {
+            label: this.$device.isMobile ? undefined : this.$t('_links.settings'),
+            icon: 'i-heroicons-cog',
+            to: '/settings',
+          },
         ],
         [
           {

@@ -6,6 +6,8 @@ export default {
     home: 'Kotinäkymä',
     charts: 'Graafit',
     reports: 'Raportit',
+    settings: 'Asetukset',
+    profile: 'Käyttäjäprofiili',
     logout: 'Kirjaudu ulos',
   },
   _index: {
@@ -35,6 +37,13 @@ export default {
       consumption: 'Kulutus (m³)',
       cost: 'Hinta (€)',
       count: 'Lukemamäärä (kpl)',
+    },
+  },
+  _settings: {
+    mockData: 'Käytä mock-tietoja',
+    mockDataOptions: {
+      'Off': 'Pois',
+      'On': 'Päällä',
     },
   },
 }

@@ -6,6 +6,7 @@ export default {
     home: 'Home',
     charts: 'Charts',
     reports: 'Reports',
+    settings: 'Settings',
     profile: 'User Profile',
     logout: 'Logout',
   },
@@ -35,6 +36,13 @@ export default {
       consumption: 'Consumption (m³)',
       cost: 'Cost (€)',
       count: 'Count (kpl)',
+    },
+  },
+  _settings: {
+    mockData: 'Use mock data',
+    mockDataOptions: {
+      'Off': 'Off',
+      'On': 'On',
     },
   },
 }

@@ -99,7 +99,5 @@ export default {
 
 <style>
 .layout-container {}
-.navigation {
-  background-color: white;
-}
+.navigation {}
 </style>

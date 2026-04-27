@@ -10,6 +10,5 @@ body {
 }
 #__nuxt {
   height: 100%;
-  background-color: #fafafa;
 }
 </style>

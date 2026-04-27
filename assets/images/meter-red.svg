@@ -59,13 +59,13 @@
      inkscape:groupmode="layer"
      inkscape:label="Layer 1">
     <circle
-       r="43.030396"
+       r="41.819300"
        cy="76.917717"
        cx="99.974701"
        id="path847"
-       style="opacity:1;fill:#c21823;fill-opacity:1;stroke-width:0.1;stroke-opacity:0.992157" />
+       style="opacity:1;fill:none;fill-opacity:1;stroke:#c21823;stroke-width:2.5;stroke-opacity:0.992157" />
     <circle
-       style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="opacity:1;fill:#ffffff;fill-opacity:0.15;stroke:none;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path849-4"
        cx="99.974701"
        cy="76.917717"

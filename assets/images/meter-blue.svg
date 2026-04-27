@@ -59,17 +59,17 @@
      id="layer1"
      transform="translate(-56.944305,-33.887321)">
     <circle
-       style="opacity:1;fill:#1329b8;fill-opacity:1;stroke-width:0.1;stroke-opacity:0.992157"
+       style="opacity:1;fill:none;fill-opacity:1;stroke:#1329b8;stroke-width:2;stroke-opacity:0.992157"
        id="path847"
        cx="99.974701"
        cy="76.917717"
-       r="43.030396" />
+       r="41.819300" />
     <circle
        r="39.970978"
        cy="76.917717"
        cx="99.974701"
        id="path849-4"
-       style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+       style="opacity:1;fill:#ffffff;fill-opacity:0.15;stroke:none;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     <rect
        style="opacity:1;fill:#110f13;fill-opacity:0.470588;stroke:#b6b5ba;stroke-width:1.165;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="rect887"

@@ -181,7 +181,6 @@ export default {
   -webkit-user-select: none;
   -ms-user-select: none;
   -webkit-appearance: none;
-  background-color: WHITE;
   background-image: none;
   border: 1px solid;
   border-color: rgb(var(--color-gray-200) / 1);
@@ -189,7 +188,6 @@ export default {
   border-radius: 4px;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
-  color: #1f1f1f;
   cursor: pointer;
   font-family: 'Roboto', arial, sans-serif;
   font-size: 14px;

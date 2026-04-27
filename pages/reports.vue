@@ -48,7 +48,7 @@
     <UTabs
       :default-index="selectedDataTypeIndex"
       :items="dataTypeOptions"
-      @change="selectDataType(groupedByOptions[$event].value)"
+      @change="selectDataType(dataTypeOptions[$event].value)"
       class="responsive-tabs"
     />
     <div class="tabs-wrapper">
@@ -72,15 +72,15 @@
       />
     </div>
     <apexchart
-      v-if="rows.length && !isLoading"
-      :key="`${selectedGroupedBy}-${selectedMerged}-${selectedValueType}-${JSON.stringify(selected)}-${rows.length}-${start.getTime()}-${end.getTime()}-${selectedRange}`"
+      v-if="rows.length && !isLoading && !isUpdatingChart"
+      :key="`${selectedGroupedBy}-${selectedMerged}-${selectedValueType}-${selectedDataType}-${JSON.stringify(selected)}-${rows.length}-${start.getTime()}-${end.getTime()}-${selectedRange}`"
       ref="reportChart"
       :height="350"
       :options="options"
       :series="series"
     />
     <UTable
-      :key="selectedValueType"
+      :key="`${selectedValueType}-${selectedDataType}`"
       :loading="isLoading || !rows.length"
       :empty-state="{
         icon: 'i-heroicons:circle-stack-20-solid',
@@ -126,18 +126,6 @@ export default {
         {
           label: this.t('_charts.options.merged'),
           value: true,
-          index: 1,
-        },
-      ],
-      valueTypeOptions: [
-        {
-          label: this.t('_charts.options.consumption'),
-          value: 'consumption',
-          index: 0,
-        },
-        {
-          label: this.t('_charts.options.cost'),
-          value: 'cost',
           index: 1,
         },
       ],
@@ -222,6 +210,7 @@ export default {
         end: endOfDay(new Date()),
       },
       selectedRange: true,
+      isUpdatingChart: false,
     }
   },
   computed: {
@@ -240,6 +229,20 @@ export default {
       selectedMerged: (store) => store.merged,
       selectedValueType: (store) => store.valueType
     }),
+    valueTypeOptions() {
+      return [
+        {
+          label: this.t('_charts.options.consumption', { unit: this.$t(`_charts.options.${this.selectedDataType}Unit`) }),
+          value: 'consumption',
+          index: 0,
+        },
+        {
+          label: this.t('_charts.options.cost'),
+          value: 'cost',
+          index: 1,
+        },
+      ]
+    },
     selectedGroupedByIndex() {
       const selection = this.groupedByOptions.find(i => i.value === this.selectedGroupedBy)
       return selection ? selection.index : 2
@@ -283,7 +286,7 @@ export default {
         ]),
         {
           key: 'consumption',
-          label: this.t(`_reports.${this.selectedValueType}`),
+          label: this.t(`_reports.${this.selectedValueType}`, { unit: this.$t(`_charts.options.${this.selectedDataType}Unit`) }),
           sortable: true,
         },
         ...(this.$device.isMobile ? [] : [
@@ -295,7 +298,20 @@ export default {
       ]
     },
   },
-  watch: {},
+  watch: {
+    series() {
+      this.isUpdatingChart = true
+      this.$nextTick(() => {
+        this.isUpdatingChart = false
+      })
+    },
+    options() {
+      this.isUpdatingChart = true
+      this.$nextTick(() => {
+        this.isUpdatingChart = false
+      })
+    },
+  },
   async created () {
     if (this.isLoggedIn && this.rows.length === 0) {
       await this.getRows(this.selected.start, this.selected.end)
@@ -337,14 +353,13 @@ export default {
     async selectDataType(value) {
       const main = useMain()
       await main.setDataType(value)
-      const measurements = useMeasurements()
-      await measurements.getMeasurements(this.selected.start, this.selected.end)
+      await this.getRows(this.selected.start, this.selected.end)
     },
     async onDayClick () {
       this.selectedRange = false
     },
-    t (key) {
-      return this.$t(this.$device.isMobile ? `${key.split('.').slice(0, -1).join('.')}._mobile.${key.split('.').pop()}` : key)
+    t (key, options) {
+      return this.$t(this.$device.isMobile ? `${key.split('.').slice(0, -1).join('.')}._mobile.${key.split('.').pop()}` : key, options)
     },
     async closeDatePicker (cb) {
       cb()

@@ -52,12 +52,7 @@ export default {
             label: this.$device.isMobile ? undefined : this.$t('_links.charts'),
             icon: 'i-heroicons-presentation-chart-line',
             to: '/charts',
-          },
-          {
-            label: this.$device.isMobile ? undefined : this.$t('_links.settings'),
-            icon: 'i-heroicons-cog',
-            to: '/settings',
-          },
+          }
         ],
         [
           {
@@ -74,6 +69,7 @@ export default {
       isLoggedIn: (store) => store.isLoggedIn,
       user: (store) => store.user,
       isAuthenticated: (store) => store.isAuthenticated,
+      encryptionKey: (store) => store.encryptionKey,
     }),
     path: () => {
       const route = useRoute()
@@ -91,6 +87,15 @@ export default {
       await main.initAuth()
       if (this.isLoggedIn) {
         await main.getUser()
+      }
+      if (this.encryptionKey !== 'demo' && this.links[0].length === 3) {
+        this.links[0].push(
+          {
+            label: this.$device.isMobile ? undefined : this.$t('_links.settings'),
+            icon: 'i-heroicons-cog-6-tooth',
+            to: '/settings',
+          },
+        )
       }
     }
   },

@@ -21,6 +21,13 @@ export const formatDate = (value, reverse) => {
 
 const price = 4.675
 
+const colors = {
+  'lämmin': '#ff3d36',
+  'kylmä': '#52a1fe',
+  'autonlataus': '#4ada80',
+  'varasto': '#f5f95c',
+}
+
 /**
  * Converts date object which has finnish UTC(+2 OR +3) as UTC0 to valid date object and vice versa.
  *
@@ -59,7 +66,7 @@ export const useReports = defineStore('reports', {
   getters: {
     rows(state) {
       return sortBy(Object.values(state.measurements.reduce((acc, cur) => {
-        const name = state.merged ? 'Vedenkulutus' : cur.name || cur.id
+        const name = state.merged ? 'Kulutus' : cur.name || cur.id
         const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true)
         const date = {
           hour: timestamp.slice(11, 13),
@@ -145,7 +152,7 @@ export const useReports = defineStore('reports', {
           acc[name] = {
             name,
             data: [],
-            color: name === 'lämmin' ? '#ff3d36' : '#52a1fe',
+            color: colors[name] || '#52a1fe',
           }
         }
         acc[name].data.push(consumption)

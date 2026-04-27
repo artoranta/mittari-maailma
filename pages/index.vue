@@ -22,10 +22,13 @@
           <div :class="`${meter.media === 'water' ? 'meter-reading-id' : 'meter-reading-id-electricity'}`">
             {{ meter.id }}
           </div>
+          <div v-if="meter.media === 'electricity'" class="meter-name-electricity">
+            {{ meter.name }}
+          </div>
           <img
             class="meter-picture"
             alt="hot-water"
-            :src="meter.name === 'lämmin' ? meterRed : (meter.media === 'water' ? meterBlue : electricityMeter)"
+            :src="meter.name === 'lämmin' ? meterRed : (meter.media === 'water' ? meterBlue : (meter.name === 'varasto' ? meterYellow : meterGreen))"
           >
         </div>
       </div>
@@ -56,8 +59,8 @@ import dayjs from "dayjs"
 
 import meterRed from '~/assets/images/meter-red.svg'
 import meterBlue from '~/assets/images/meter-blue.svg'
-import electricityMeter from '~/assets/images/meter.svg'
-
+import meterGreen from '~/assets/images/meter-green.svg'
+import meterYellow from '~/assets/images/meter-yellow.svg'
 export default {
   name: 'Index',
   components: {},
@@ -65,7 +68,8 @@ export default {
     return {
       meterRed,
       meterBlue,
-      electricityMeter,
+      meterGreen,
+      meterYellow,
     }
   },
   computed: {
@@ -212,6 +216,19 @@ export default {
   position: relative;
   z-index: 1000;
   margin-top: -5.4rem;
+  margin-left: 3.5rem;
+  text-align: right;
+  max-width: 8rem;
+  font-size: 5cqmin;
+  letter-spacing: .15rem;
+  font-family:  "Lucida Console", Monaco, monospace;
+}
+
+.meter-name-electricity {
+  position: relative;
+  z-index: 1000;
+  color: grey;
+  margin-top: 5.4rem;
   margin-left: 3.5rem;
   text-align: right;
   max-width: 8rem;

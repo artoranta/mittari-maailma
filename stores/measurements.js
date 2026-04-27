@@ -8,16 +8,22 @@ const offsets = {
 }
 
 const names = (id, media) => {
-  console.log(media, id)
   return media === 'water' ? {
     '01234567': 'lämmin',
     '07654321': 'kylmä',
     '06696698': 'lämmin',
     '06697364': 'kylmä',
   }[id] : {
-    '01234567': 'lämmitystolppa',
+    '01234567': 'autonlataus',
     '07654321': 'varasto',
   }[id]
+}
+
+const colors = {
+  'lämmin': '#ff3d36',
+  'kylmä': '#52a1fe',
+  'autonlataus': '#4ada80',
+  'varasto': '#f5f95c',
 }
 
 export const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
@@ -73,7 +79,10 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
 export const fetchMeasurements = async (start, end) => {
   const main = useMain()
   if (main.mockData === '1') {
-    return Object.values(generateMockData(start, end, main.dataType, main.dataType === 'water' ? 'day' : 'night')).map(convertMeasurement)
+    main.startLoading('measurements')
+    const data = Object.values(generateMockData(start, end, main.dataType, main.dataType === 'water' ? 'day' : 'night')).map(convertMeasurement)
+    main.stopLoading('measurements')
+    return data
   }
   try {
     main.startLoading('measurements')
@@ -85,7 +94,6 @@ export const fetchMeasurements = async (start, end) => {
     return (await Promise.all(Object.values(measurements)
       .map(async value => JSON.parse(await decryptData(value.encryptedData, main.encryptionKey, value.iv)))))
       .map(convertMeasurement).sort((a, b) => {
-        console.log(a)
         // Convert the timestamps to Date objects
         const dateA = new Date(a.timestamp)
         const dateB = new Date(b.timestamp)
@@ -127,7 +135,7 @@ export const useMeasurements = defineStore('measurements', {
                 null,
               ],
             ],
-            color: name === 'lämmin' ? '#ff3d36' : '#52a1fe',
+            color: colors[name] || '#52a1fe',
           }
         }
         acc[name].data.push([

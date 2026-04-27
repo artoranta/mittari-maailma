@@ -113,6 +113,9 @@ export const useMain = defineStore('main', {
     },
     async getUser () {
       await setDefaultOptions({ locale: fi })
+      if (this.mockData === '1') {
+        this.user = { username: 'Asunto X', timestamp: new Date().toISOString() }
+      }
       const token = await this.getFirebaseToken()
       const api = mande(this.url)
       const path = `/users.json?auth=${token}`
@@ -152,6 +155,9 @@ export const useMain = defineStore('main', {
         this.user = null
         this.startLoading('login')
         this.encryptionKey = encryptionKey || this.encryptionKey
+        if (this.encryptionKey === 'demo') {
+          this.setMockData('1')
+        }
         const measurements = useMeasurements()
         await this.getUser()
         if (!this.user) {

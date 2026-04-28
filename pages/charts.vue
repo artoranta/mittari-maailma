@@ -36,6 +36,13 @@
         </div>
       </template>
     </UPopover>
+    <UTabs
+      v-if="mockData === '1'"
+      :default-index="selectedDataTypeIndex"
+      :items="dataTypeOptions"
+      @change="selectDataType(dataTypeOptions[$event].value)"
+      class="responsive-tabs"
+    />
     <div
       v-if="isLoading"
       class="spinner-wrapper"
@@ -46,8 +53,9 @@
       />
     </div>
     <apexchart
+      v-if="!isUpdatingChart"
       v-for="s in series"
-      :key="s.name"
+      :key="`series-${s.name}-${selectedDataType}`"
       :ref="s.name"
       :height="options.chart.height"
       :options="{ ...options, annotations: annotations[s.name] }"
@@ -193,6 +201,19 @@ export default {
       },
       selected: defaultRange,
       selectedDuration: defaultDuration,
+      isUpdatingChart: false,
+      dataTypeOptions: [
+        {
+          label: this.t('_charts.options.water'),
+          value: 'water',
+          index: 0,
+        },
+        {
+          label: this.t('_charts.options.electricity'),
+          value: 'electricity',
+          index: 1,
+        },
+      ],
     }
   },
   computed: {
@@ -200,11 +221,12 @@ export default {
       locale: (store) => store.locale,
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
+      selectedDataType: (store) => store.chartDataType,
       mockData: (store) => store.mockData,
     }),
     ...mapState(useMeasurements, {
-      start: (store) => store.start,
-      end: (store) => store.end,
+      start: (store) => store.chartStart,
+      end: (store) => store.chartEnd,
       series: (store) => store.series,
       annotations: (store) => store.annotations,
     }),
@@ -215,8 +237,24 @@ export default {
         ? `${selectedRangeLabel} (${rangeLabel})`
         : rangeLabel
     },
+    selectedDataTypeIndex() {
+      const selection = this.dataTypeOptions.find(i => i.value === this.selectedDataType)
+      return selection ? selection.index : 0
+    },
   },
   watch: {
+    series() {
+      this.isUpdatingChart = true
+      this.$nextTick(() => {
+        this.isUpdatingChart = false
+      })
+    },
+    options() {
+      this.isUpdatingChart = true
+      this.$nextTick(() => {
+        this.isUpdatingChart = false
+      })
+    },
     mockData(newValue, oldValue) {
       if (newValue !== oldValue) {
         this.getMeasurements(this.selected.start, this.selected.end)
@@ -234,7 +272,7 @@ export default {
     async getMeasurements(start, end) {
       try {
         const measurements = useMeasurements()
-        await measurements.getMeasurements(start, end)
+        await measurements.getMeasurements(start, end, 'chartMeasurements', this.selectedDataType)
       } catch (err) {
         console.log(err.message)
       }
@@ -279,6 +317,11 @@ export default {
     },
     t (key) {
       return this.$t(this.$device.isMobile ? `${key.split('.').slice(0, -1).join('.')}._mobile.${key.split('.').pop()}` : key)
+    },
+    async selectDataType(value) {
+      const main = useMain()
+      await main.setDataType(value, 'chart')
+      await this.getMeasurements(this.selected.start, this.selected.end)
     },
   },
 }

@@ -220,11 +220,13 @@ export default {
       mockData: (store) => store.mockData,
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
-      selectedDataType: (store) => store.dataType,
+      selectedDataType: (store) => store.reportDataType,
+    }),
+    ...mapState(useMeasurements, {
+      start: (store) => store.reportStart,
+      end: (store) => store.reportEnd,
     }),
     ...mapState(useReports, {
-      start: (store) => store.start,
-      end: (store) => store.end,
       rows: (store) => store.rows,
       series: (store) => store.series,
       options: (store) => store.options,
@@ -332,7 +334,8 @@ export default {
       try {
         const reports = useReports()
         this.isUpdatingChart = true
-        await reports.getRows(start, end)
+        console.log('fetching report rows')
+        await reports.getRows(start, end, this.selectedDataType)
         this.isUpdatingChart = false
       } catch (err) {
         console.log(err.message)
@@ -362,7 +365,7 @@ export default {
     },
     async selectDataType(value) {
       const main = useMain()
-      await main.setDataType(value)
+      await main.setDataType(value, 'report')
       await this.getRows(this.selected.start, this.selected.end)
     },
     async onDayClick () {

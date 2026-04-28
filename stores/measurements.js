@@ -44,14 +44,14 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
   let nextIncrement2 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
   let minutesElapsed1 = 0
   let minutesElapsed2 = 0
-  
+
   const isActiveHour = (date) => {
     const hour = date.getHours()
     if (hours === 'day') return hour >= 6 && hour < 22
     if (hours === 'night') return hour >= 22 || hour < 6
     return true
   }
-  
+
   while (current.getTime() <= end.getTime()) {
     if (isActiveHour(current)) {
       if (minutesElapsed1 >= nextIncrement1) {
@@ -67,22 +67,19 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
       minutesElapsed1 += 15
       minutesElapsed2 += 15
     }
-    
+
     data.push({ id: '01234567', timestamp: current.toISOString(), media: dataType, total_m3: total1.toFixed(3) })
     data.push({ id: '07654321', timestamp: current.toISOString(), media: dataType, total_m3: total2.toFixed(3) })
-    
+
     current.setMinutes(current.getMinutes() + 15)
   }
   return data
 }
 
-export const fetchMeasurements = async (start, end) => {
+export const fetchMeasurements = async (start, end, dataType) => {
   const main = useMain()
   if (main.mockData === '1') {
-    main.startLoading('measurements')
-    const data = Object.values(generateMockData(start, end, main.dataType, main.dataType === 'water' ? 'day' : 'night')).map(convertMeasurement)
-    main.stopLoading('measurements')
-    return data
+    return Object.values(generateMockData(start, end, dataType, dataType === 'water' ? 'day' : 'night')).map(convertMeasurement)
   }
   try {
     main.startLoading('measurements')
@@ -112,67 +109,73 @@ export const fetchMeasurements = async (start, end) => {
   }
 }
 
+const seriesFromMeasurements = (start) => (acc, { name, timestamp, total_m3 }) => {
+  const value = Number.parseFloat(total_m3)
+  if (!Object.hasOwnProperty.call(acc, name)) {
+    acc[name] = {
+      name,
+      data: [
+        [
+          new Date(start).getTime(),
+          null,
+        ],
+      ],
+      color: colors[name] || '#52a1fe',
+    }
+  }
+  acc[name].data.push([
+    new Date(timestamp).getTime(),
+    value,
+  ])
+  return acc
+}
+
+const annotationsFromSeries = s => {
+  const annotation = {
+    yaxis: [],
+    xaxis: [],
+  }
+  const avg = Math.max(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null))
+  const dff = (Math.max(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null)) - Math.min(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null)))
+  annotation.yaxis.push({
+    y: avg,
+    borderColor: '#cecece',
+    borderWidth: 2,
+    label: {
+      text: dff.toFixed(3) + (s.name.includes('lämmin') || s.name.includes('kylmä') ? ' m³' : 'kWh'),
+      position: 'left',
+      textAnchor: 'right',
+      offsetX: 10,
+      offsetY: -5,
+      style: {
+        fontSize: '11px',
+      },
+    },
+  })
+  return [
+    s.name,
+    annotation,
+  ]
+}
+
 export const useMeasurements = defineStore('measurements', {
   state: () => ({
     latest: [],
-    measurements: [],
-    start: null,
-    end: null,
+    reportMeasurements: [],
+    chartMeasurements: [],
+    reportStart: null,
+    reportEnd: null,
+    chartStart: null,
+    chartEnd: null,
     timestamp: new Date().toISOString(),
   }),
   getters: {
+    // Series for charts page
     series(state) {
-      return Object.values(state.measurements.reduce((acc, cur) => {
-        const name = cur.name || cur.id
-        const timestamp = new Date(cur.timestamp).getTime()
-        const value = Number.parseFloat(cur.total_m3)
-        if (!Object.hasOwnProperty.call(acc, name)) {
-          acc[name] = {
-            name,
-            data: [
-              [
-                new Date(state.start).getTime(),
-                null,
-              ],
-            ],
-            color: colors[name] || '#52a1fe',
-          }
-        }
-        acc[name].data.push([
-          timestamp,
-          value,
-        ])
-        return acc
-      }, {}))
+      return Object.values(state.chartMeasurements.reduce(seriesFromMeasurements(state.chartStart), {}))
     },
     annotations(state) {
-      return Object.fromEntries(state.series.map(s => {
-        const annotation = {
-          yaxis: [],
-          xaxis: [],
-        }
-        const avg = Math.max(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null))
-        const dff = (Math.max(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null)) - Math.min(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null)))
-        annotation.yaxis.push({
-          y: avg,
-          borderColor: '#cecece',
-          borderWidth: 2,
-          label: {
-            text: dff.toFixed(3) + 'm³',
-            position: 'left',
-            textAnchor: 'right',
-            offsetX: 10,
-            offsetY: -5,
-            style: {
-              fontSize: '11px',
-            },
-          },
-        })
-        return [
-          s.name,
-          annotation,
-        ]
-      }))
+      return Object.fromEntries(state.series.map(annotationsFromSeries))
     },
   },
   actions: {
@@ -206,14 +209,26 @@ export const useMeasurements = defineStore('measurements', {
         main.stopLoading('latest')
       }
     },
-    async getMeasurements(start, end) {
-      this.measurements = await fetchMeasurements(start, end)
-      if (start && end) {
-        this.start = start
-        this.end = end
-      } else {
-        this.start = null
-        this.end = null
+    async getMeasurements(start, end, stateName = 'reportMeasurements', dataType) {
+      console.log(start, end, stateName, dataType)
+      if (stateName === 'reportMeasurements') {
+        this.reportMeasurements = await fetchMeasurements(start, end, dataType)
+        if (start && end) {
+          this.reportStart = start
+          this.reportEnd = end
+        } else {
+          this.reportStart = null
+          this.reportEnd = null
+        }
+      } else if (stateName === 'chartMeasurements') {
+        this.chartMeasurements = await fetchMeasurements(start, end, dataType)
+        if (start && end) {
+          this.chartStart = start
+          this.chartEnd = end
+        } else {
+          this.chartStart = null
+          this.chartEnd = null
+        }
       }
     },
   },

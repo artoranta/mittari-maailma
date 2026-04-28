@@ -23,7 +23,8 @@ const initialState = {
   url: !process.client ? undefined : firebaseConfig.databaseURL,
   token: !process.client ? undefined : window.localStorage.getItem('token'),
   mockData: !process.client ? undefined : window.localStorage.getItem('mockData') || '0',
-  dataType: !process.client ? undefined : window.localStorage.getItem('dataType') || 'water',
+  reportDataType: !process.client ? undefined : window.localStorage.getItem('reportDataType') || 'water',
+  chartDataType: !process.client ? undefined : window.localStorage.getItem('chartDataType') || 'water',
 }
 
 export const decryptData = async (encryptedData, base64Key, base64Iv) => {
@@ -61,7 +62,8 @@ export const useMain = defineStore('main', {
     locale: 'fi',
     unsubAuth: null,
     mockData: initialState.mockData,
-    dataType: initialState.dataType,
+    reportDataType: initialState.reportDataType,
+    chartDataType: initialState.chartDataType,
   }),
   getters: {
     isLoggedIn(state) {
@@ -110,10 +112,15 @@ export const useMain = defineStore('main', {
         measurements.getLatest()
       }
     },
-    setDataType(value) {
+    setDataType(value, stateName) {
       const dataType = value === 'electricity' ? 'electricity' : 'water'
-      this.dataType = dataType
-      window.localStorage.setItem('dataType', dataType)
+      if (stateName === 'chart') {
+        this.chartDataType = dataType
+        window.localStorage.setItem('chartDataType', dataType)
+      } else if (stateName === 'report') {
+        this.reportDataType = dataType
+        window.localStorage.setItem('reportDataType', dataType)
+      }
     },
     async getUser () {
       await setDefaultOptions({ locale: fi })

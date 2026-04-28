@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { sortedUniq, sortBy } from 'lodash'
 import { getWeek } from 'date-fns'
-import { fetchMeasurements } from './measurements'
 import fiCharts from '~/locales/fi/charts.js'
 import enCharts from '~/locales/en/charts.js'
 
@@ -54,52 +53,64 @@ export const convertFinnishDateToISOString = (input, reverse = false, convert = 
   return output.toISOString()
 }
 
+const rowsFromMeasurements = (state) => (acc, cur) => {
+  const name = state.merged ? 'Kulutus' : cur.name || cur.id
+  const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true)
+  const date = {
+    hour: timestamp.slice(11, 13),
+    day: formatDate(timestamp),
+    week: `${formatDate(timestamp).slice(3, 10)} (vko ${getWeek(new Date(cur.timestamp))})`,
+    month: formatDate(timestamp).slice(3, 10),
+  }[state.groupedBy]
+  const id = {
+    hour: `${cur.id}-${formatDate(timestamp)}`,
+    day: cur.id,
+    week: cur.id,
+    month: cur.id,
+  }[state.groupedBy]
+  const value = state.valueType === 'consumption' ? Number.parseFloat(cur.total_m3) : Number.parseFloat(cur.total_m3) * price
+  if (!Object.hasOwnProperty.call(acc, name)) {
+    acc[name] = {}
+  }
+  if (!Object.hasOwnProperty.call(acc[name], date)) {
+    acc[name][date] = {
+      name,
+      date,
+      data: { [id]: [] },
+    }
+  }
+  if (!Object.hasOwnProperty.call(acc[name][date].data, id)) {
+    acc[name][date].data[id] = []
+  }
+  acc[name][date].data[id].push([
+    timestamp,
+    value,
+  ])
+  return acc
+}
+
+const seriesFromRows = (acc, { name, consumption }) => {
+  if (!Object.hasOwnProperty.call(acc, name)) {
+    acc[name] = {
+      name,
+      data: [],
+      color: colors[name] || '#52a1fe',
+    }
+  }
+  acc[name].data.push(consumption)
+  return acc
+}
+
 export const useReports = defineStore('reports', {
   state: () => ({
-    measurements: [],
-    start: null,
-    end: null,
     groupedBy: 'day', //hour, day, week, month
     merged: false,
     valueType: 'consumption', //cost
   }),
   getters: {
     rows(state) {
-      return sortBy(Object.values(state.measurements.reduce((acc, cur) => {
-        const name = state.merged ? 'Kulutus' : cur.name || cur.id
-        const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true)
-        const date = {
-          hour: timestamp.slice(11, 13),
-          day: formatDate(timestamp),
-          week: `${formatDate(timestamp).slice(3, 10)} (vko ${getWeek(new Date(cur.timestamp))})`,
-          month: formatDate(timestamp).slice(3, 10),
-        }[state.groupedBy]
-        const id = {
-          hour: `${cur.id}-${formatDate(timestamp)}`,
-          day: cur.id,
-          week: cur.id,
-          month: cur.id,
-        }[state.groupedBy]
-        const value = this.valueType === 'consumption' ? Number.parseFloat(cur.total_m3) : Number.parseFloat(cur.total_m3) * price
-        if (!Object.hasOwnProperty.call(acc, name)) {
-          acc[name] = {}
-        }
-        if (!Object.hasOwnProperty.call(acc[name], date)) {
-          acc[name][date] = {
-            name,
-            date,
-            data: { [id]: [] },
-          }
-        }
-        if (!Object.hasOwnProperty.call(acc[name][date].data, id)) {
-          acc[name][date].data[id] = []
-        }
-        acc[name][date].data[id].push([
-          timestamp,
-          value,
-        ])
-        return acc
-      }, {})).map(o => Object.values(o)).flat().map(row => ({
+      const measurements = useMeasurements()
+      return sortBy(Object.values(measurements.reportMeasurements.reduce(rowsFromMeasurements(state), {})).map(o => Object.values(o)).flat().map(row => ({
         ...row,
         range: Object.values(row.data).length > 2 ? Object.values(Object.entries(row.data).reduce((acc, entry) => {
           const _id = entry[0].split('-')[0]
@@ -146,25 +157,16 @@ export const useReports = defineStore('reports', {
         },
       }
     },
+    // Series for reports page
     series(state) {
-      return Object.values(state.rows.reduce((acc, { name, consumption }) => {
-        if (!Object.hasOwnProperty.call(acc, name)) {
-          acc[name] = {
-            name,
-            data: [],
-            color: colors[name] || '#52a1fe',
-          }
-        }
-        acc[name].data.push(consumption)
-        return acc
-      }, {}))
+      return Object.values(state.rows.reduce(seriesFromRows, {}))
     },
   },
   actions: {
-    async getRows(start, end) {
-      this.start = start
-      this.end = end
-      this.measurements = await fetchMeasurements(start, end)
+    async getRows(start, end, dataType) {
+      console.log('fetching report rows 2')
+      const measurements = useMeasurements()
+      await measurements.getMeasurements(start, end, 'reportMeasurements', dataType)
     },
     async setGroupedBy(value) {
       this.groupedBy = value

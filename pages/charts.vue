@@ -200,6 +200,7 @@ export default {
       locale: (store) => store.locale,
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
+      mockData: (store) => store.mockData,
     }),
     ...mapState(useMeasurements, {
       start: (store) => store.start,
@@ -215,7 +216,13 @@ export default {
         : rangeLabel
     },
   },
-  watch: {},
+  watch: {
+    mockData(newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.getMeasurements(this.selected.start, this.selected.end)
+      }
+    },
+  },
   async created () {
     if (this.isLoggedIn && this.series.length === 0) {
       await this.getMeasurements(this.selected.start, this.selected.end)

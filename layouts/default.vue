@@ -76,6 +76,19 @@ export default {
       return route.path.replace('/', '')
     },
   },
+  watch: {
+    user() {
+      if (this.user && !this.user?.demo && this.links[0].length === 3) {
+        this.links[0].push(
+          {
+            label: this.$device.isMobile ? undefined : this.$t('_links.settings'),
+            icon: 'i-heroicons-cog-6-tooth',
+            to: '/settings',
+          },
+        )
+      }
+    },
+  },
   mounted() {
   },
   async created () {
@@ -87,15 +100,6 @@ export default {
       await main.initAuth()
       if (this.isLoggedIn) {
         await main.getUser()
-      }
-      if (this.encryptionKey !== 'demo' && this.links[0].length === 3) {
-        this.links[0].push(
-          {
-            label: this.$device.isMobile ? undefined : this.$t('_links.settings'),
-            icon: 'i-heroicons-cog-6-tooth',
-            to: '/settings',
-          },
-        )
       }
     }
   },

@@ -46,6 +46,7 @@
       </template>
     </UPopover>
     <UTabs
+      v-if="mockData === '1'"
       :default-index="selectedDataTypeIndex"
       :items="dataTypeOptions"
       @change="selectDataType(dataTypeOptions[$event].value)"
@@ -73,7 +74,7 @@
     </div>
     <apexchart
       v-if="rows.length && !isLoading && !isUpdatingChart"
-      :key="`${selectedGroupedBy}-${selectedMerged}-${selectedValueType}-${selectedDataType}-${JSON.stringify(selected)}-${rows.length}-${start.getTime()}-${end.getTime()}-${selectedRange}`"
+      :key="`${selectedGroupedBy}-${selectedGroupedBy}-${selectedMerged}-${selectedValueType}-${selectedDataType}-${JSON.stringify(selected)}-${rows.length}-${start.getTime()}-${end.getTime()}-${selectedRange}`"
       ref="reportChart"
       :height="350"
       :options="options"
@@ -215,6 +216,8 @@ export default {
   },
   computed: {
     ...mapState(useMain, {
+      user: (store) => store.user,
+      mockData: (store) => store.mockData,
       isLoggedIn: (store) => store.isLoggedIn,
       isLoading: (store) => !!store.loading.length,
       selectedDataType: (store) => store.dataType,
@@ -311,6 +314,11 @@ export default {
         this.isUpdatingChart = false
       })
     },
+    mockData(newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.selectDataType('water')
+      }
+    },
   },
   async created () {
     if (this.isLoggedIn && this.rows.length === 0) {
@@ -323,7 +331,9 @@ export default {
     async getRows(start, end) {
       try {
         const reports = useReports()
+        this.isUpdatingChart = true
         await reports.getRows(start, end)
+        this.isUpdatingChart = false
       } catch (err) {
         console.log(err.message)
       }

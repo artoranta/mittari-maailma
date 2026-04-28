@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { mande } from 'mande'
 import { fi } from 'date-fns/locale'
 import { setDefaultOptions } from 'date-fns'
-import { useMeasurements } from './measurements'
+import { useMeasurements, fetchMeasurements } from './measurements'
 import { initializeApp } from 'firebase/app'
 import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth'
 
@@ -101,10 +101,14 @@ export const useMain = defineStore('main', {
     setAuthUser(value) {
       this.authUser = value
     },
-    setMockData(value) {
+    setMockData(value, fetchMeasuements) {
       const mockData = value === '1' ? '1' : '0'
       this.mockData = mockData
       window.localStorage.setItem('mockData', mockData)
+      if (fetchMeasuements) {
+        const measurements = useMeasurements()
+        measurements.getLatest()
+      }
     },
     setDataType(value) {
       const dataType = value === 'electricity' ? 'electricity' : 'water'
@@ -114,7 +118,7 @@ export const useMain = defineStore('main', {
     async getUser () {
       await setDefaultOptions({ locale: fi })
       if (this.mockData === '1') {
-        this.user = { username: 'Asunto X', timestamp: new Date().toISOString() }
+        this.user = { username: 'Asunto X', timestamp: new Date().toISOString(), demo: true }
       }
       const token = await this.getFirebaseToken()
       const api = mande(this.url)

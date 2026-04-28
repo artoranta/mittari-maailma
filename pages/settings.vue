@@ -43,7 +43,7 @@ export default {
   methods: {
     async selectMockData(value) {
       const main = useMain()
-      await main.setMockData(value)
+      await main.setMockData(value, true)
     },
   },
 }

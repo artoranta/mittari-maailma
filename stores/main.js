@@ -168,11 +168,6 @@ export const useMain = defineStore('main', {
         this.encryptionKey = encryptionKey || this.encryptionKey
         if (this.encryptionKey === 'demo') {
           this.setMockData('1')
-        } else {
-          this.chartDataType = 'water'
-          this.reportDataType = 'water'
-          window.localStorage.setItem('chartDataType', 'water')
-          window.localStorage.setItem('reportDataType', 'water')
         }
         const measurements = useMeasurements()
         await this.getUser()

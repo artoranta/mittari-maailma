@@ -34,7 +34,7 @@ export default {
       date: 'Pvm.',
       name: 'Nimi',
       range: 'Arvoväli',
-      consumption: 'Kulutus ({unit}})',
+      consumption: 'Kulutus ({unit})',
       cost: 'Hinta (€)',
       count: 'Lukemamäärä (kpl)',
     },

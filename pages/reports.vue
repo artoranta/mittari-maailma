@@ -50,7 +50,7 @@
       :default-index="selectedDataTypeIndex"
       :items="dataTypeOptions"
       @change="selectDataType(dataTypeOptions[$event].value)"
-      class="responsive-tabs"
+      class="responsive-tabs mb-3"
     />
     <div class="tabs-wrapper">
       <UTabs

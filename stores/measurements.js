@@ -40,10 +40,24 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
   const current = new Date(start)
   let total1 = 0
   let total2 = 0
-  let nextIncrement1 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
-  let nextIncrement2 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
-  let minutesElapsed1 = 0
-  let minutesElapsed2 = 0
+
+  // Pattern configuration based on dataType
+  let activePeriodReadings
+  let pausePeriodReadings
+
+  if (dataType === 'electricity') {
+    // Electricity: 4 hours active (16 x 15min) + 24 hours pause (96 x 15min)
+    activePeriodReadings = 16 // 4 hours
+    pausePeriodReadings = 96 // 24 hours
+  } else {
+    // Water: 30 min active (2 x 15min) + 60 min pause (4 x 15min)
+    activePeriodReadings = 2 // 30 minutes
+    pausePeriodReadings = 8 // 60 minutes
+  }
+
+  const cycleLength = activePeriodReadings + pausePeriodReadings
+  let readingCount1 = 0
+  let readingCount2 = 0
 
   const isActiveHour = (date) => {
     const hour = date.getHours()
@@ -54,18 +68,24 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
 
   while (current.getTime() <= end.getTime()) {
     if (isActiveHour(current)) {
-      if (minutesElapsed1 >= nextIncrement1) {
-        total1 += Math.random() * 1
-        minutesElapsed1 = 0
-        nextIncrement1 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
+      // Meter 1 pattern
+      const posInCycle1 = readingCount1 % cycleLength
+      if (posInCycle1 < activePeriodReadings) {
+        // Active period: increment with small variation
+        total1 += (Math.random() * 0.3 + 0.5) // 0.1 to 0.4 per reading
       }
-      if (minutesElapsed2 >= nextIncrement2) {
-        total2 += Math.random() * 1
-        minutesElapsed2 = 0
-        nextIncrement2 = Math.floor(Math.random() * (120 - 15 + 1)) + 15
+      // else: pause period - no increment
+
+      // Meter 2 pattern
+      const posInCycle2 = readingCount2 % cycleLength
+      if (posInCycle2 < activePeriodReadings) {
+        // Active period: increment with small variation
+        total2 += (Math.random() * 0.3 + 0.5) // 0.1 to 0.4 per reading
       }
-      minutesElapsed1 += 15
-      minutesElapsed2 += 15
+      // else: pause period - no increment
+
+      readingCount1++
+      readingCount2++
     }
 
     data.push({ id: '01234567', timestamp: current.toISOString(), media: dataType, total_m3: total1.toFixed(3) })
@@ -158,6 +178,32 @@ const annotationsFromSeries = s => {
   ]
 }
 
+const normalizeSeries = (series) => {
+  const data = [...series]
+  if (!data.length) return [];
+
+  let result = [];
+  let baseline = data[0][1]; // initial baseline
+  let prevValue = data[0][1];
+
+  for (let i = 0; i < data.length; i++) {
+    const [timestamp, value] = data[i];
+
+    // if same as previous → reset baseline
+    if (i > 0 && value === prevValue) {
+      baseline = value;
+      result.push([data[i - 1][0], 0]);
+      result.push([timestamp, 0]);
+    } else {
+      result.push([timestamp, value - baseline]);
+    }
+
+    prevValue = value;
+  }
+
+  return result;
+}
+
 export const useMeasurements = defineStore('measurements', {
   state: () => ({
     latest: [],
@@ -172,7 +218,11 @@ export const useMeasurements = defineStore('measurements', {
   getters: {
     // Series for charts page
     series(state) {
-      return Object.values(state.chartMeasurements.reduce(seriesFromMeasurements(state.chartStart), {}))
+      const measurements = useMeasurements()
+      const baseSeries = Object.values(state.chartMeasurements.reduce(seriesFromMeasurements(state.chartStart), {}))
+      return measurements.chartDataType === 'electricity'
+        ? baseSeries.map(s => ({ ...s, data: normalizeSeries(s.data).map(([ts, vl]) => [ts, vl.toFixed(3)]) }))
+        : baseSeries
     },
     annotations(state) {
       return Object.fromEntries(state.series.map(annotationsFromSeries))
@@ -210,7 +260,6 @@ export const useMeasurements = defineStore('measurements', {
       }
     },
     async getMeasurements(start, end, stateName = 'reportMeasurements', dataType) {
-      console.log(start, end, stateName, dataType)
       if (stateName === 'reportMeasurements') {
         this.reportMeasurements = await fetchMeasurements(start, end, dataType)
         if (start && end) {
@@ -222,6 +271,7 @@ export const useMeasurements = defineStore('measurements', {
         }
       } else if (stateName === 'chartMeasurements') {
         this.chartMeasurements = await fetchMeasurements(start, end, dataType)
+        this.chartDataType = dataType
         if (start && end) {
           this.chartStart = start
           this.chartEnd = end

@@ -7,7 +7,8 @@
     />
     <div
       class="text-gray-500 font-medium text-sm"
-      style="position: absolute; top: 14px; width: 100%; text-align: center; pointer-events: none; opacity: 0.8;"
+      :style="{ width: $device.isMobile ? '50%' : '100%'}"
+      style="position: absolute; top: 14px; right: 0px; text-align: center; pointer-events: none; opacity: 0.8;"
     >
       {{ (user || {}).username }}
     </div>

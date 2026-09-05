@@ -229,6 +229,17 @@ export const useMeasurements = defineStore('measurements', {
     },
   },
   actions: {
+    async updateLatest(latest) {
+      const main = useMain()
+      try {
+        this.latest = (await Promise.all(Object.values(latest || {})
+          .map(async value => JSON.parse(await decryptData(value.encryptedData, main.encryptionKey, value.iv))))
+        ).map(convertMeasurement)
+        this.timestamp = new Date().toISOString()
+      } catch (err) {
+        console.log(err.message)
+      }
+    },
     async getLatest() {
       const main = useMain()
       if (main.mockData === '1') {
@@ -245,14 +256,7 @@ export const useMeasurements = defineStore('measurements', {
         const api = mande(main.url)
         const path = `/latest.json?auth=${token}`
         const latest = await api.get(path)
-        try {
-          this.latest = (await Promise.all(Object.values(latest)
-            .map(async value => JSON.parse(await decryptData(value.encryptedData, main.encryptionKey, value.iv)))))
-            .map(convertMeasurement)
-        } catch (err) {
-          console.log(err.message)
-        }
-        this.timestamp = new Date().toISOString()
+        await this.updateLatest(latest)
         main.stopLoading('latest')
       } catch (err) {
         console.log(err.message)

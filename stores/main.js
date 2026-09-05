@@ -5,6 +5,7 @@ import { setDefaultOptions } from 'date-fns'
 import { useMeasurements, fetchMeasurements } from './measurements'
 import { initializeApp } from 'firebase/app'
 import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth'
+import { getDatabase, onValue, ref } from 'firebase/database'
 
 const firebaseConfig = {
   apiKey: "AIzaSyD4OKFodCl19-HJ-BblEE_4hRWlE0qXIHU", // Public, not secret.
@@ -48,6 +49,7 @@ export const decryptData = async (encryptedData, base64Key, base64Iv) => {
 
 let tokenPromise = null
 let authReadyPromise = null
+let latestUnsubscribe = null
 
 export const useMain = defineStore('main', {
   state: () => ({
@@ -87,6 +89,12 @@ export const useMain = defineStore('main', {
       authReadyPromise = new Promise((resolve) => {
         this.unsubAuth = onAuthStateChanged(auth, (user) => {
           this.setAuthUser(user)
+          if (user) {
+            this.subscribeToLatest()
+          } else if (latestUnsubscribe) {
+            latestUnsubscribe()
+            latestUnsubscribe = null
+          }
           this.stopLoading('auth')
           resolve()
         })
@@ -102,6 +110,17 @@ export const useMain = defineStore('main', {
     },
     setAuthUser(value) {
       this.authUser = value
+    },
+    subscribeToLatest() {
+      if (latestUnsubscribe) return
+
+      const measurements = useMeasurements()
+      const database = getDatabase(app)
+      latestUnsubscribe = onValue(ref(database, 'latest'), (snapshot) => {
+        measurements.updateLatest(snapshot.val())
+      }, (error) => {
+        console.log(error.message)
+      })
     },
     setMockData(value, fetchMeasuements) {
       const mockData = value === '1' ? '1' : '0'

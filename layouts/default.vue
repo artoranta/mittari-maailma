@@ -93,15 +93,14 @@ export default {
   mounted() {
   },
   async created () {
-    if (!this.isLoggedIn && this.path !== 'login') {
+    const main = useMain()
+    await main.initAuth()
+
+    if (!main.isLoggedIn && this.path !== 'login') {
       const router = useRouter()
       await router.push('/login')
-    } else if (!this.user) {
-      const main = useMain()
-      await main.initAuth()
-      if (this.isLoggedIn) {
-        await main.getUser()
-      }
+    } else if (main.isLoggedIn && !this.user) {
+      await main.getUser()
     }
   },
   methods: {

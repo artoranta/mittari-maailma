@@ -164,7 +164,6 @@ export const useReports = defineStore('reports', {
   },
   actions: {
     async getRows(start, end, dataType) {
-      console.log('fetching report rows 2')
       const measurements = useMeasurements()
       await measurements.getMeasurements(start, end, 'reportMeasurements', dataType)
     },

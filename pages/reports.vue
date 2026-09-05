@@ -334,7 +334,6 @@ export default {
       try {
         const reports = useReports()
         this.isUpdatingChart = true
-        console.log('fetching report rows')
         await reports.getRows(start, end, this.selectedDataType)
         this.isUpdatingChart = false
       } catch (err) {

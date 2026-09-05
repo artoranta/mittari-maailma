@@ -48,6 +48,7 @@ export const decryptData = async (encryptedData, base64Key, base64Iv) => {
 }
 
 let tokenPromise = null
+let authReadyPromise = null
 
 export const useMain = defineStore('main', {
   state: () => ({
@@ -83,16 +84,17 @@ export const useMain = defineStore('main', {
       await setPersistence(auth, browserLocalPersistence)
 
       // avoid multiple listeners
-      if (this.unsubAuth) return
+      if (this.unsubAuth) return authReadyPromise
 
-      this.unsubAuth = onAuthStateChanged(auth, (user) => {
-        if (user) {
+      authReadyPromise = new Promise((resolve) => {
+        this.unsubAuth = onAuthStateChanged(auth, (user) => {
           this.setAuthUser(user)
-        } else {
-          this.setAuthUser(null)
-        }
-        this.stopLoading('auth')
+          this.stopLoading('auth')
+          resolve()
+        })
       })
+
+      return authReadyPromise
     },
     startLoading(value) {
       this.loading.push(value)
@@ -141,21 +143,19 @@ export const useMain = defineStore('main', {
         }
       }
     },
-    getFirebaseToken() {
+    async getFirebaseToken() {
+      await this.initAuth()
       const user = this.authUser
-      if (!user && this.token) {
-        return this.token
-      } else if (!user) {
-        return null
-      }
+      if (!user) return null
 
       // avoid multiple simultaneous refresh calls
       if (!tokenPromise) {
         tokenPromise = user.getIdToken().then((token) => {
           this.token = token
           window.localStorage.setItem('token', this.token)
-          tokenPromise = null
           return token
+        }).finally(() => {
+          tokenPromise = null
         })
       }
 

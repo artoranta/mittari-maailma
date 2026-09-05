@@ -112,7 +112,7 @@ export const useMain = defineStore('main', {
       this.authUser = value
     },
     subscribeToLatest() {
-      if (latestUnsubscribe) return
+      if (this.mockData === '1' || latestUnsubscribe) return
 
       const measurements = useMeasurements()
       const database = getDatabase(app)
@@ -122,25 +122,35 @@ export const useMain = defineStore('main', {
         console.log(error.message)
       })
     },
+    stopLatestSubscription() {
+      if (latestUnsubscribe) {
+        latestUnsubscribe()
+        latestUnsubscribe = null
+      }
+    },
     setMockData(value, fetchMeasuements) {
       const mockData = value === '1' ? '1' : '0'
       this.mockData = mockData
       window.localStorage.setItem('mockData', mockData)
-      if (mockData === '0') {
+      const measurements = useMeasurements()
+      if (mockData === '1') {
+        this.stopLatestSubscription()
+        measurements.startMockLatestSubscription()
+      } else {
+        measurements.stopMockLatestSubscription()
         this.chartDataType = 'water'
         this.reportDataType = 'water'
         window.localStorage.setItem('chartDataType', 'water')
         window.localStorage.setItem('reportDataType', 'water')
-        const measurements = useMeasurements()
         measurements.chartMeasurements = []
         measurements.chartStart = null
         measurements.chartEnd = null
         measurements.reportMeasurements = []
         measurements.reportStart = null
         measurements.reportEnd = null
+        if (this.authUser) this.subscribeToLatest()
       }
       if (fetchMeasuements) {
-        const measurements = useMeasurements()
         measurements.getLatest()
       }
     },
@@ -219,6 +229,9 @@ export const useMain = defineStore('main', {
       }
     },
     logout() {
+      const measurements = useMeasurements()
+      measurements.stopMockLatestSubscription()
+      this.stopLatestSubscription()
       if (process.client) {
         window.localStorage.removeItem('encryptionKey')
         window.localStorage.removeItem('url')

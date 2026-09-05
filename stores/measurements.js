@@ -26,6 +26,14 @@ const colors = {
   'varasto': '#f5f95c',
 }
 
+let mockLatestInterval = null
+const mockLatestValues = new Map()
+const mockLatestIntervalMs = 5000
+const mockConsumptionPerMinute = {
+  electricity: 0.061,
+  water: 0.010,
+}
+
 export const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
   id,
   media,
@@ -229,6 +237,35 @@ export const useMeasurements = defineStore('measurements', {
     },
   },
   actions: {
+    startMockLatestSubscription() {
+      if (mockLatestInterval) return
+
+      this.latest.forEach(measurement => {
+        mockLatestValues.set(`${measurement.media}:${measurement.id}`, Number.parseFloat(measurement.total_m3))
+      })
+      mockLatestInterval = window.setInterval(() => {
+        this.latest = this.latest.map(measurement => {
+          const key = `${measurement.media}:${measurement.id}`
+          const previousValue = mockLatestValues.get(key) ?? Number.parseFloat(measurement.total_m3)
+          const increment = (mockConsumptionPerMinute[measurement.media] || 0) * (mockLatestIntervalMs / 60000)
+          const value = previousValue + increment
+          mockLatestValues.set(key, value)
+          return {
+            ...measurement,
+            total_m3: value.toFixed(3),
+            timestamp: new Date().toISOString(),
+          }
+        })
+        this.timestamp = new Date().toISOString()
+      }, mockLatestIntervalMs)
+    },
+    stopMockLatestSubscription() {
+      if (mockLatestInterval) {
+        window.clearInterval(mockLatestInterval)
+        mockLatestInterval = null
+      }
+      mockLatestValues.clear()
+    },
     async updateLatest(latest) {
       const main = useMain()
       try {
@@ -243,12 +280,14 @@ export const useMeasurements = defineStore('measurements', {
     async getLatest() {
       const main = useMain()
       if (main.mockData === '1') {
-        return this.latest = Object.values([
+        this.latest = Object.values([
           { id: '01234567', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
           { id: '07654321', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
           { id: '01234567', timestamp: new Date().toISOString(), media: 'electricity', total_m3: Math.random().toFixed(3) * 10 }, // total_kWh
           { id: '07654321', timestamp: new Date().toISOString(), media: 'electricity', total_m3: Math.random().toFixed(3) * 10 } // total_kWh
         ].map(convertMeasurement))
+        this.startMockLatestSubscription()
+        return this.latest
       }
       try {
         main.startLoading('latest')

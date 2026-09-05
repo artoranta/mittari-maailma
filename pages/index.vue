@@ -6,12 +6,32 @@
     <UCard class="latest-card">
       <div class="meter-container">
         <div
-          v-for="meter in latest"
+          v-for="meter in latest.sort((a, b) => a.media.localeCompare(b.media))"
           :key="meter.id"
           class="meter"
         >
-          <div class="meter-reading">
-            {{ meter.total_m3.replace('.', '') }}
+          <div
+            class="meter-reading"
+            :aria-label="meter.total_m3"
+          >
+            <span
+              v-for="(digit, index) in meterDigits(meter.total_m3)"
+              :key="`${meter.id}-${index}`"
+              class="meter-digit"
+            >
+              <span
+                class="meter-digit-track"
+                :style="{ transform: `translateY(-${digit * 10}%)` }"
+              >
+                <span
+                  v-for="value in 10"
+                  :key="value"
+                  class="meter-digit-value"
+                >
+                  {{ value - 1 }}
+                </span>
+              </span>
+            </span>
           </div>
           <div :class="`${meter.media === 'water' ? 'meter-reading-dot' : 'meter-reading-dot-electricity'}`">
             ,
@@ -100,6 +120,9 @@ export default {
     formatDate(string) {
       return dayjs(string).locale('fi').format('D.M.YYYY [klo] HH:mm.ss')
     },
+    meterDigits(value) {
+      return value.replace('.', '').split('').map(Number)
+    },
     async getLatest() {
       try {
         const measurements = useMeasurements()
@@ -151,37 +174,56 @@ export default {
 }
 .meter-reading {
   position: relative;
+  display: flex;
+  gap: 3px;
+  justify-content: flex-end;
+  height: 1em;
+  overflow: hidden;
   z-index: 1000;
-  margin-top: 4.05rem;
-  margin-right: 3.40rem;
+  margin-top: 4.35rem;
+  margin-right: 3.55rem;
   text-align: right;
   font-size: 10cqmin;
   letter-spacing: .155rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
+.meter-digit {
+  display: block;
+  height: 1em;
+  width: 14px;
+  overflow: hidden;
+}
+.meter-digit-track {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.7s cubic-bezier(.2, .75, .25, 1);
+  will-change: transform;
+}
+.meter-digit-value {
+  display: block;
+  height: 1em;
+  line-height: 1em;
+}
 .meter-reading-dot {
   position: relative;
   z-index: 1000;
-  margin-top: -2rem;
-  margin-right: 6.05rem;
+  margin-top: -1.6rem;
+  margin-right: 6rem;
   text-align: right;
   font-size: 10cqmin;
   letter-spacing: .15rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
 .meter-reading-dot-electricity {
   position: relative;
   z-index: 1000;
-  margin-top: -2rem;
-  margin-right: 4rem;
+  margin-top: -1.6rem;
+  margin-right: 3.9rem;
   text-align: right;
   font-size: 10cqmin;
   letter-spacing: .15rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
 .meter-reading-timestamp {
   position: relative;
   z-index: 1000;
@@ -193,7 +235,6 @@ export default {
   letter-spacing: .15rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
 .meter-reading-timestamp-electricity {
   position: relative;
   z-index: 1000;
@@ -205,7 +246,6 @@ export default {
   letter-spacing: .15rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
 .meter-reading-id {
   position: relative;
   z-index: 1000;
@@ -217,7 +257,6 @@ export default {
   letter-spacing: .15rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
 .meter-reading-id-electricity {
   position: relative;
   z-index: 1000;
@@ -229,7 +268,6 @@ export default {
   letter-spacing: .15rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
 .meter-name-electricity {
   position: relative;
   z-index: 1000;
@@ -242,7 +280,6 @@ export default {
   letter-spacing: .15rem;
   font-family:  "Lucida Console", Monaco, monospace;
 }
-
 .meter-picture {
   position: absolute;
   top: 0;

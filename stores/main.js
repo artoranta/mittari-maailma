@@ -21,7 +21,6 @@ const app = initializeApp(firebaseConfig)
 const initialState = {
   encryptionKey: !process.client ? undefined : window.localStorage.getItem('encryptionKey'),
   url: !process.client ? undefined : firebaseConfig.databaseURL,
-  token: !process.client ? undefined : window.localStorage.getItem('token'),
   mockData: !process.client ? undefined : window.localStorage.getItem('mockData') || '0',
   reportDataType: !process.client ? undefined : window.localStorage.getItem('reportDataType') || 'water',
   chartDataType: !process.client ? undefined : window.localStorage.getItem('chartDataType') || 'water',
@@ -56,7 +55,6 @@ export const useMain = defineStore('main', {
     timestamp: new Date().toISOString(),
     encryptionKey: initialState.encryptionKey,
     url: initialState.url,
-    token: initialState.token,
     errorMessage: null,
     user: null,
     authUser: null,
@@ -68,7 +66,7 @@ export const useMain = defineStore('main', {
   }),
   getters: {
     isLoggedIn(state) {
-      return state.encryptionKey && state.token
+      return state.encryptionKey && state.authUser
     },
     isAuthenticated(state) {
       return !!state.authUser
@@ -151,8 +149,6 @@ export const useMain = defineStore('main', {
       // avoid multiple simultaneous refresh calls
       if (!tokenPromise) {
         tokenPromise = user.getIdToken().then((token) => {
-          this.token = token
-          window.localStorage.setItem('token', this.token)
           return token
         }).finally(() => {
           tokenPromise = null
@@ -194,14 +190,12 @@ export const useMain = defineStore('main', {
       if (process.client) {
         window.localStorage.removeItem('encryptionKey')
         window.localStorage.removeItem('url')
-        window.localStorage.removeItem('token')
         const auth = getAuth()
         auth.signOut()
       }
       this.errorMessage = null
       this.encryptionKey = null
       this.user = null
-      this.token = null
       this.authUser = null
       this.latest = []
       this.measurements = []

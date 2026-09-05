@@ -126,6 +126,19 @@ export const useMain = defineStore('main', {
       const mockData = value === '1' ? '1' : '0'
       this.mockData = mockData
       window.localStorage.setItem('mockData', mockData)
+      if (mockData === '0') {
+        this.chartDataType = 'water'
+        this.reportDataType = 'water'
+        window.localStorage.setItem('chartDataType', 'water')
+        window.localStorage.setItem('reportDataType', 'water')
+        const measurements = useMeasurements()
+        measurements.chartMeasurements = []
+        measurements.chartStart = null
+        measurements.chartEnd = null
+        measurements.reportMeasurements = []
+        measurements.reportStart = null
+        measurements.reportEnd = null
+      }
       if (fetchMeasuements) {
         const measurements = useMeasurements()
         measurements.getLatest()

@@ -321,6 +321,11 @@ export default {
         this.selectDataType('water')
       }
     },
+    isLoggedIn(isLoggedIn) {
+      if (isLoggedIn && this.rows.length === 0) {
+        this.getRows(this.selected.start, this.selected.end)
+      }
+    },
   },
   async created () {
     if (this.isLoggedIn && this.rows.length === 0) {

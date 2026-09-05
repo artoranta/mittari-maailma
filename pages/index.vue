@@ -82,7 +82,13 @@ export default {
       timestamp: (store) => store.timestamp,
     }),
   },
-  watch: {},
+  watch: {
+    isLoggedIn(isLoggedIn) {
+      if (isLoggedIn && this.latest.length === 0) {
+        this.getLatest()
+      }
+    },
+  },
   created () {
     if (this.isLoggedIn && this.latest.length === 0) {
       this.getLatest()

@@ -260,6 +260,11 @@ export default {
         this.getMeasurements(this.selected.start, this.selected.end)
       }
     },
+    isLoggedIn(isLoggedIn) {
+      if (isLoggedIn && this.series.length === 0) {
+        this.getMeasurements(this.selected.start, this.selected.end)
+      }
+    },
   },
   async created () {
     if (this.isLoggedIn && this.series.length === 0) {

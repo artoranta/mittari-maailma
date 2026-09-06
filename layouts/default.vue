@@ -53,7 +53,12 @@ export default {
             label: this.$device.isMobile ? undefined : this.$t('_links.charts'),
             icon: 'i-heroicons-presentation-chart-line',
             to: '/charts',
-          }
+          },
+          {
+            label: this.$device.isMobile ? undefined : this.$t('_links.billing'),
+            icon: 'i-heroicons-calculator',
+            to: '/billing',
+          },
         ],
         [
           {
@@ -79,7 +84,7 @@ export default {
   },
   watch: {
     user() {
-      if (this.user && !this.user?.demo && this.links[0].length === 3) {
+      if (this.user && !this.user?.demo && !this.links[0].some(link => link.to === '/settings')) {
         this.links[0].push(
           {
             label: this.$device.isMobile ? undefined : this.$t('_links.settings'),

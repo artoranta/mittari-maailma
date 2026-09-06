@@ -27,6 +27,11 @@ const colors = {
   'varasto': '#f5f95c',
 }
 
+const valueFields = {
+  'water': 'total_m3',
+  'electricity': 'total_kwh',
+}
+
 /**
  * Converts date object which has finnish UTC(+2 OR +3) as UTC0 to valid date object and vice versa.
  *
@@ -68,7 +73,7 @@ const rowsFromMeasurements = (state) => (acc, cur) => {
     week: cur.id,
     month: cur.id,
   }[state.groupedBy]
-  const value = state.valueType === 'consumption' ? Number.parseFloat(cur.total_m3) : Number.parseFloat(cur.total_m3) * price
+  const value = state.valueType === 'consumption' ? Number.parseFloat(cur[valueFields[cur.media]]) : Number.parseFloat(cur[valueFields[cur.media]]) * price
   if (!Object.hasOwnProperty.call(acc, name)) {
     acc[name] = {}
   }

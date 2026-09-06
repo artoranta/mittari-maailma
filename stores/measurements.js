@@ -26,6 +26,11 @@ const colors = {
   'varasto': '#f5f95c',
 }
 
+const valueFields = {
+  'water': 'total_m3',
+  'electricity': 'total_kwh',
+}
+
 let mockLatestInterval = null
 const mockLatestValues = new Map()
 const mockLatestIntervalMs = 5000
@@ -34,12 +39,12 @@ const mockConsumptionPerMinute = {
   water: 0.010,
 }
 
-export const convertMeasurement = ({ id, media, meter, total_m3, timestamp }) => ({
+export const convertMeasurement = ({ id, media, meter, timestamp, ...measurement }) => ({
   id,
   media,
   meter,
   name: names(id, media) || '',
-  total_m3: (Math.round((total_m3 + (offsets[id] || 0)) * 1000) / 1000).toFixed(3),
+  [valueFields[media]]: (Math.round((measurement[valueFields[media]] + (offsets[id] || 0)) * 1000) / 1000).toFixed(3),
   timestamp,
 })
 
@@ -96,8 +101,8 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
       readingCount2++
     }
 
-    data.push({ id: '01234567', timestamp: current.toISOString(), media: dataType, total_m3: total1.toFixed(3) })
-    data.push({ id: '07654321', timestamp: current.toISOString(), media: dataType, total_m3: total2.toFixed(3) })
+    data.push({ id: '01234567', timestamp: current.toISOString(), media: dataType, [valueFields[dataType]]: total1.toFixed(3) })
+    data.push({ id: '07654321', timestamp: current.toISOString(), media: dataType, [valueFields[dataType]]: total2.toFixed(3) })
 
     current.setMinutes(current.getMinutes() + 15)
   }
@@ -137,8 +142,8 @@ export const fetchMeasurements = async (start, end, dataType) => {
   }
 }
 
-const seriesFromMeasurements = (start) => (acc, { name, timestamp, total_m3 }) => {
-  const value = Number.parseFloat(total_m3)
+const seriesFromMeasurements = (start) => (acc, { name, media, timestamp, ...measurement }) => {
+  const value = Number.parseFloat(measurement[valueFields[media]])
   if (!Object.hasOwnProperty.call(acc, name)) {
     acc[name] = {
       name,
@@ -163,14 +168,16 @@ const annotationsFromSeries = s => {
     yaxis: [],
     xaxis: [],
   }
-  const avg = Math.max(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null))
-  const dff = (Math.max(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null)) - Math.min(...s.data.map(([_ts, vl]) => vl).filter(v => v !== null)))
+  const values = s.data.map(([_ts, vl]) => vl).filter(v => v !== null)
+  const peak = Math.max(...values)
+  const isWater = s.name.includes('lämmin') || s.name.includes('kylmä')
+  const labelValue = isWater ? peak - Math.min(...values) : peak
   annotation.yaxis.push({
-    y: avg,
+    y: peak,
     borderColor: '#cecece',
     borderWidth: 2,
     label: {
-      text: dff.toFixed(3) + (s.name.includes('lämmin') || s.name.includes('kylmä') ? ' m³' : 'kWh'),
+      text: labelValue.toFixed(3) + (isWater ? ' m³' : 'kWh'),
       position: 'left',
       textAnchor: 'right',
       offsetX: 10,
@@ -186,31 +193,12 @@ const annotationsFromSeries = s => {
   ]
 }
 
-const normalizeSeries = (series) => {
-  const data = [...series]
-  if (!data.length) return [];
-
-  let result = [];
-  let baseline = data[0][1]; // initial baseline
-  let prevValue = data[0][1];
-
-  for (let i = 0; i < data.length; i++) {
-    const [timestamp, value] = data[i];
-
-    // if same as previous → reset baseline
-    if (i > 0 && value === prevValue) {
-      baseline = value;
-      result.push([data[i - 1][0], 0]);
-      result.push([timestamp, 0]);
-    } else {
-      result.push([timestamp, value - baseline]);
-    }
-
-    prevValue = value;
-  }
-
-  return result;
-}
+const intervalSeries = (series) => series.map(([timestamp, value], index) => [
+  timestamp,
+  index === 0 || value === null || series[index - 1][1] === null
+    ? null
+    : value - series[index - 1][1],
+])
 
 export const useMeasurements = defineStore('measurements', {
   state: () => ({
@@ -229,7 +217,13 @@ export const useMeasurements = defineStore('measurements', {
       const measurements = useMeasurements()
       const baseSeries = Object.values(state.chartMeasurements.reduce(seriesFromMeasurements(state.chartStart), {}))
       return measurements.chartDataType === 'electricity'
-        ? baseSeries.map(s => ({ ...s, data: normalizeSeries(s.data).map(([ts, vl]) => [ts, vl.toFixed(3)]) }))
+        ? baseSeries.map(s => ({
+          ...s,
+          data: intervalSeries(s.data).map(([timestamp, value]) => [
+            timestamp,
+            value === null ? null : value.toFixed(3),
+          ]),
+        }))
         : baseSeries
     },
     annotations(state) {
@@ -241,18 +235,18 @@ export const useMeasurements = defineStore('measurements', {
       if (mockLatestInterval) return
 
       this.latest.forEach(measurement => {
-        mockLatestValues.set(`${measurement.media}:${measurement.id}`, Number.parseFloat(measurement.total_m3))
+        mockLatestValues.set(`${measurement.media}:${measurement.id}`, Number.parseFloat(measurement[valueFields[measurement.media]]))
       })
       mockLatestInterval = window.setInterval(() => {
         this.latest = this.latest.map(measurement => {
           const key = `${measurement.media}:${measurement.id}`
-          const previousValue = mockLatestValues.get(key) ?? Number.parseFloat(measurement.total_m3)
+          const previousValue = mockLatestValues.get(key) ?? Number.parseFloat(measurement[valueFields[measurement.media]])
           const increment = (mockConsumptionPerMinute[measurement.media] || 0) * (mockLatestIntervalMs / 60000)
           const value = previousValue + increment
           mockLatestValues.set(key, value)
           return {
             ...measurement,
-            total_m3: value.toFixed(3),
+            [valueFields[measurement.media]]: value.toFixed(3),
             timestamp: new Date().toISOString(),
           }
         })
@@ -280,11 +274,22 @@ export const useMeasurements = defineStore('measurements', {
     async getLatest() {
       const main = useMain()
       if (main.mockData === '1') {
+        /*
+        {
+          "id": "01234567",
+          "media": "electricity",
+          "meter": "em111",
+          "name": "sähkö",
+          "total_kwh": "137.120",
+          "power_kw": "2.340",
+          "timestamp": new Date().toISOString()
+        }
+        */
         this.latest = Object.values([
           { id: '01234567', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
           { id: '07654321', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
-          { id: '01234567', timestamp: new Date().toISOString(), media: 'electricity', total_m3: Math.random().toFixed(3) * 10 }, // total_kWh
-          { id: '07654321', timestamp: new Date().toISOString(), media: 'electricity', total_m3: Math.random().toFixed(3) * 10 } // total_kWh
+          { id: '01234567', timestamp: new Date().toISOString(), media: 'electricity', total_kwh: Math.random().toFixed(3) * 10, power_kw: 0 },
+          { id: '07654321', timestamp: new Date().toISOString(), media: 'electricity', total_kwh: Math.random().toFixed(3) * 10, power_kw: 0 }
         ].map(convertMeasurement))
         this.startMockLatestSubscription()
         return this.latest

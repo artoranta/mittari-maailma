@@ -154,7 +154,7 @@ export default {
         },
         stroke: {
           show: true,
-          curve: 'straight',
+          curve: 'stepline',
           width: 2,
         },
         xaxis: {

@@ -12,10 +12,10 @@
         >
           <div
             class="meter-reading"
-            :aria-label="meter.total_m3"
+            :aria-label="meter[valueFields[meter.media]]"
           >
             <span
-              v-for="(digit, index) in meterDigits(meter.total_m3)"
+              v-for="(digit, index) in meterDigits(meter[valueFields[meter.media]])"
               :key="`${meter.id}-${index}`"
               class="meter-digit"
             >
@@ -90,6 +90,10 @@ export default {
       meterBlue,
       meterGreen,
       meterYellow,
+      valueFields: {
+        water: 'total_m3',
+        electricity: 'total_kwh',
+      },
     }
   },
   computed: {

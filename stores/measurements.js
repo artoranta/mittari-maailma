@@ -86,6 +86,11 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
     return true
   }
 
+  const outdoorTemperature = (date) => {
+    const hour = date.getHours() + date.getMinutes() / 60
+    return 8 + 3 * Math.sin(((hour - 8) / 24) * Math.PI * 2)
+  }
+
   while (current.getTime() <= end.getTime()) {
     if (isActiveHour(current)) {
       // Meter 1 pattern
@@ -96,11 +101,16 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
       }
       // else: pause period - no increment
 
-      // Meter 2 pattern
-      const posInCycle2 = readingCount2 % cycleLength
-      if (posInCycle2 < activePeriodReadings) {
-        // Active period: increment with small variation
-        total2 += (Math.random() * 0.3 + 0.5) // 0.1 to 0.4 per reading
+      if (dataType === 'electricity') {
+        const heatingDemand = Math.max(0, 12 - outdoorTemperature(current))
+        total2 += 0.14 + heatingDemand * 0.004
+      } else {
+        // Meter 2 pattern
+        const posInCycle2 = readingCount2 % cycleLength
+        if (posInCycle2 < activePeriodReadings) {
+          // Active period: increment with small variation
+          total2 += (Math.random() * 0.3 + 0.5) // 0.1 to 0.4 per reading
+        }
       }
       // else: pause period - no increment
 
@@ -119,7 +129,7 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
 export const fetchMeasurements = async (start, end, dataType) => {
   const main = useMain()
   if (main.mockData === '1') {
-    return Object.values(generateMockData(start, end, dataType, dataType === 'water' ? 'day' : 'night')).map(convertMeasurement)
+    return Object.values(generateMockData(start, end, dataType, dataType === 'water' ? 'day' : 'all')).map(convertMeasurement)
   }
   try {
     main.startLoading('measurements')

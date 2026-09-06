@@ -26,6 +26,13 @@ const colors = {
   'varasto': '#f5f95c',
 }
 
+const quarterHourTimestamp = timestamp => {
+  const date = new Date(timestamp)
+  date.setSeconds(0, 0)
+  date.setMinutes(Math.round(date.getMinutes() / 15) * 15)
+  return date.getTime()
+}
+
 const valueFields = {
   'water': 'total_m3',
   'electricity': 'total_kwh',
@@ -157,7 +164,7 @@ const seriesFromMeasurements = (start) => (acc, { name, media, timestamp, ...mea
     }
   }
   acc[name].data.push([
-    new Date(timestamp).getTime(),
+    media === 'electricity' ? quarterHourTimestamp(timestamp) : new Date(timestamp).getTime(),
     value,
   ])
   return acc
@@ -193,12 +200,15 @@ const annotationsFromSeries = s => {
   ]
 }
 
-const intervalSeries = (series) => series.map(([timestamp, value], index) => [
-  timestamp,
-  index === 0 || value === null || series[index - 1][1] === null
-    ? null
-    : value - series[index - 1][1],
-])
+const intervalSeries = (series) => series.map(([timestamp, value], index) => {
+  const nextValue = series[index + 1]?.[1]
+  return [
+    timestamp,
+    value === null || nextValue === null || nextValue === undefined
+      ? null
+      : nextValue - value,
+  ]
+})
 
 export const useMeasurements = defineStore('measurements', {
   state: () => ({

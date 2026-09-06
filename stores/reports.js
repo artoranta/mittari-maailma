@@ -3,6 +3,7 @@ import { sortedUniq, sortBy } from 'lodash'
 import { getWeek } from 'date-fns'
 import fiCharts from '~/locales/fi/charts.js'
 import enCharts from '~/locales/en/charts.js'
+import { useMain } from './main'
 
 Date.prototype.stdTimezoneOffset = function () {
   const jan = new Date(this.getFullYear(), 0, 1)
@@ -60,7 +61,9 @@ export const convertFinnishDateToISOString = (input, reverse = false, convert = 
 
 const rowsFromMeasurements = (state) => (acc, cur) => {
   const name = state.merged ? 'Kulutus' : cur.name || cur.id
-  const timestamp = convertFinnishDateToISOString(new Date(cur.timestamp), true)
+  const timestamp = useMain().mockData === '1'
+    ? cur.timestamp
+    : convertFinnishDateToISOString(new Date(cur.timestamp), true)
   const date = {
     hour: timestamp.slice(11, 13),
     day: formatDate(timestamp),

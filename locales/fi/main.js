@@ -13,6 +13,20 @@ export default {
   _index: {
     refresh: 'Päivitä',
   },
+  _charging: {
+    device: 'Sähköauton lataus',
+    deviceName: 'Autonlataus',
+    status: {
+      charging: 'Lataa',
+      idle: 'Valmiustila',
+    },
+    power: 'Latausteho',
+    started: 'Alkanut',
+    duration: 'Kesto',
+    energy: 'Energia',
+    cost: 'Hinta',
+    price: 'Sähkön hinta'
+  },
   _login: {
     username: 'Käyttäjätunnus',
     password: 'Salasana',

@@ -41,6 +41,10 @@ const valueFields = {
 let mockLatestInterval = null
 const mockLatestValues = new Map()
 const mockLatestIntervalMs = 5000
+let mockChargingActive = false
+let mockChargingStopped = false
+const mockChargingPowerKw = 2.95
+const nextMockChargingPower = (powerKw) => Number(Math.min(3.2, Math.max(2.7, powerKw + (Math.random() - 0.5) * 0.12)).toFixed(3))
 const mockConsumptionPerMinute = {
   electricity: 0.061,
   water: 0.010,
@@ -52,8 +56,15 @@ export const convertMeasurement = ({ id, media, meter, timestamp, ...measurement
   meter,
   name: names(id, media) || '',
   [valueFields[media]]: (Math.round((measurement[valueFields[media]] + (offsets[id] || 0)) * 1000) / 1000).toFixed(3),
+  ...(media === 'electricity' && measurement.power_kw !== undefined ? { power_kw: Number(measurement.power_kw) } : {}),
   timestamp,
 })
+
+export const getMockChargingPower = (date = new Date()) => {
+  const hour = date.getHours() + date.getMinutes() / 60
+  if (hour < 18 || hour >= 22) return 0
+  return Number((2.4 + 0.55 * Math.sin(((hour - 18) / 4) * Math.PI)).toFixed(3))
+}
 
 const generateMockData = (start, end, dataType, hours = 'all') => {
   const data = []
@@ -66,9 +77,9 @@ const generateMockData = (start, end, dataType, hours = 'all') => {
   let pausePeriodReadings
 
   if (dataType === 'electricity') {
-    // Electricity: 4 hours active (16 x 15min) + 24 hours pause (96 x 15min)
+    // Electricity: 4 hours active (16 x 15min) + 20 hours pause (80 x 15min)
     activePeriodReadings = 16 // 4 hours
-    pausePeriodReadings = 96 // 24 hours
+    pausePeriodReadings = 80 // 20 hours, making a 24-hour cycle
   } else {
     // Water: 30 min active (2 x 15min) + 60 min pause (4 x 15min)
     activePeriodReadings = 2 // 30 minutes
@@ -261,12 +272,21 @@ export const useMeasurements = defineStore('measurements', {
         this.latest = this.latest.map(measurement => {
           const key = `${measurement.media}:${measurement.id}`
           const previousValue = mockLatestValues.get(key) ?? Number.parseFloat(measurement[valueFields[measurement.media]])
-          const increment = (mockConsumptionPerMinute[measurement.media] || 0) * (mockLatestIntervalMs / 60000)
+          const isMockCharger = measurement.media === 'electricity' && measurement.name === 'autonlataus'
+          const powerKw = mockChargingActive && isMockCharger
+            ? nextMockChargingPower(Number(measurement.power_kw || mockChargingPowerKw))
+            : (isMockCharger && mockChargingStopped ? 0 : Number(measurement.power_kw || 0))
+          const increment = isMockCharger
+            ? (mockChargingActive ? powerKw * (mockLatestIntervalMs / 3600000) : 0)
+            : (mockConsumptionPerMinute[measurement.media] || 0) * (mockLatestIntervalMs / 60000)
           const value = previousValue + increment
           mockLatestValues.set(key, value)
           return {
             ...measurement,
             [valueFields[measurement.media]]: value.toFixed(3),
+            ...(measurement.media === 'electricity'
+              ? { power_kw: isMockCharger && (mockChargingActive || mockChargingStopped) ? powerKw : getMockChargingPower(new Date()) }
+              : {}),
             timestamp: new Date().toISOString(),
           }
         })
@@ -274,11 +294,33 @@ export const useMeasurements = defineStore('measurements', {
       }, mockLatestIntervalMs)
     },
     stopMockLatestSubscription() {
+      mockChargingActive = false
+      mockChargingStopped = false
       if (mockLatestInterval) {
         window.clearInterval(mockLatestInterval)
         mockLatestInterval = null
       }
       mockLatestValues.clear()
+    },
+    startMockChargingEvent() {
+      const main = useMain()
+      if (main.mockData !== '1') return
+
+      mockChargingActive = true
+      mockChargingStopped = false
+      this.latest = this.latest.map(measurement => measurement.media === 'electricity' && measurement.name === 'autonlataus'
+        ? { ...measurement, power_kw: mockChargingPowerKw, timestamp: new Date().toISOString() }
+        : measurement)
+    },
+    stopMockChargingEvent() {
+      const main = useMain()
+      if (main.mockData !== '1') return
+
+      mockChargingActive = false
+      mockChargingStopped = true
+      this.latest = this.latest.map(measurement => measurement.media === 'electricity' && measurement.name === 'autonlataus'
+        ? { ...measurement, power_kw: 0, timestamp: new Date().toISOString() }
+        : measurement)
     },
     async updateLatest(latest) {
       const main = useMain()
@@ -308,7 +350,7 @@ export const useMeasurements = defineStore('measurements', {
         this.latest = Object.values([
           { id: '01234567', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
           { id: '07654321', timestamp: new Date().toISOString(), media: 'water', total_m3: Math.random().toFixed(3) },
-          { id: '01234567', timestamp: new Date().toISOString(), media: 'electricity', total_kwh: Math.random().toFixed(3) * 10, power_kw: 0 },
+          { id: '01234567', timestamp: new Date().toISOString(), media: 'electricity', total_kwh: Math.random().toFixed(3) * 10, power_kw: getMockChargingPower() },
           { id: '07654321', timestamp: new Date().toISOString(), media: 'electricity', total_kwh: Math.random().toFixed(3) * 10, power_kw: 0 }
         ].map(convertMeasurement))
         this.startMockLatestSubscription()

@@ -70,6 +70,7 @@
         class="latest"
       >{{ JSON.stringify(latest, undefined, 2).slice(0, 50001) }}</pre>-->
     </UCard>
+    <EvChargingCard v-if="hasChargingMeter" />
   </div>
 </template>
 
@@ -81,9 +82,10 @@ import meterRed from '~/assets/images/meter-red.svg'
 import meterBlue from '~/assets/images/meter-blue.svg'
 import meterGreen from '~/assets/images/meter-green.svg'
 import meterYellow from '~/assets/images/meter-yellow.svg'
+import EvChargingCard from '~/components/EvChargingCard.vue'
 export default {
   name: 'Index',
-  components: {},
+  components: { EvChargingCard },
   data() {
     return {
       meterRed,
@@ -105,6 +107,9 @@ export default {
       latest: (store) => store.latest,
       timestamp: (store) => store.timestamp,
     }),
+    hasChargingMeter() {
+      return this.latest.some(measurement => measurement.media === 'electricity' && measurement.name === 'autonlataus')
+    },
   },
   watch: {
     isLoggedIn(isLoggedIn) {

@@ -13,6 +13,20 @@ export default {
   _index: {
     refresh: 'Refresh',
   },
+  _charging: {
+    device: 'EV charging',
+    deviceName: 'Car charger',
+    status: {
+      charging: 'Charging',
+      idle: 'Idle',
+    },
+    power: 'Charging power',
+    started: 'Started',
+    duration: 'Duration',
+    energy: 'Energy',
+    cost: 'Cost',
+    price: 'Electricity price'
+  },
   _login: {
     username: 'Username',
     password: 'Password',

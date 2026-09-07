@@ -6,16 +6,16 @@
       class="border-b border-gray-200 dark:border-gray-800 navigation"
     />
     <div
-      class="text-gray-500 font-medium text-sm"
+      class="user-indicator text-gray-500 font-medium text-sm"
       :style="{ width: $device.isMobile ? '50%' : '100%'}"
       style="position: absolute; top: 14px; right: 0px; text-align: center; pointer-events: none; opacity: 0.8;"
     >
       {{ (user || {}).username }}
     </div>
-    <div style="position: relative; z-index: 10; padding: 1rem; height: calc(100% - 49px); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <div class="page-content" style="position: relative; z-index: 10; padding: 1rem; height: calc(100% - 49px); display: flex; flex-direction: column; align-items: center; justify-content: center;">
       <slot />
     </div>
-    <div style="position: absolute; bottom: 25px; right: 30px; color: grey; font-size: 12px;">
+    <div class="build-date" style="position: absolute; bottom: 25px; right: 30px; color: grey; font-size: 12px;">
       {{ formatDate($config.public.buildDate) }}
     </div>
   </div>
@@ -117,6 +117,4 @@ export default {
 </script>
 
 <style>
-.layout-container {}
-.navigation {}
 </style>

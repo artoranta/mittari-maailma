@@ -9,6 +9,7 @@
         icon="i-heroicons-plus"
         :label="$t('_billing.addMonth')"
         variant="soft"
+        class="no-print"
         @click="addMonth"
       />
     </div>
@@ -27,11 +28,20 @@
           <span>{{ $t('_billing.end') }} {{ formatEndDate(month.end) }}</span>
         </div>
         <UButton
+          v-if="month.exportRows.length"
+          icon="i-heroicons-arrow-down-tray"
+          variant="soft"
+          :label="$t('_billing.exportCsv')"
+          class="no-print"
+          @click="exportCsv(month)"
+        />
+        <UButton
           v-if="months.length > 1"
           icon="i-heroicons-trash"
           color="red"
           variant="ghost"
           :aria-label="$t('_billing.removeMonth')"
+          class="no-print"
           @click="removeMonth(monthIndex)"
         />
       </div>
@@ -142,13 +152,29 @@
       <div class="totals">
         <span class="grand-total">{{ $t('_billing.grandTotal') }} <strong>{{ formatMoney(grandTotal) }} €</strong></span>
       </div>
-      <UButton
-        icon="i-heroicons-calculator"
-        :label="isCalculating ? $t('_billing.calculating') : $t('_billing.calculate')"
-        :loading="isCalculating"
-        :disabled="isCalculating"
-        @click="calculate"
-      />
+      <div class="calculate-action no-print">
+        <UButton
+          icon="i-heroicons-calculator"
+          :label="isCalculating ? $t('_billing.calculating') : $t('_billing.calculate')"
+          :loading="isCalculating"
+          :disabled="isCalculating"
+          @click="calculate"
+        />
+      </div>
+      <div class="export-actions no-print">
+        <UButton
+          icon="i-heroicons-document-arrow-down"
+          :label="$t('_billing.exportPdf')"
+          variant="soft"
+          @click="exportPdf"
+        />
+        <UButton
+          icon="i-heroicons-link"
+          :label="linkCopied ? $t('_billing.linkCopied') : $t('_billing.copyLink')"
+          variant="soft"
+          @click="copyLink"
+        />
+      </div>
     </div>
   </UCard>
 </template>
@@ -178,6 +204,7 @@ const createMonth = (month = localMonthValue(new Date())) => ({
   meters: [],
   residents: [],
   commonConsumption: 0,
+  exportRows: [],
 })
 
 const mockBillingMeasurements = (start, end) => {
@@ -196,13 +223,57 @@ const mockBillingMeasurements = (start, end) => {
   return data
 }
 
+const csvEscape = (value) => {
+  const stringValue = String(value ?? '')
+  return /[;"\n]/.test(stringValue) ? `"${stringValue.replaceAll('"', '""')}"` : stringValue
+}
+
+const finnishIsoString = (value) => {
+  const date = new Date(value)
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Helsinki',
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date).filter(part => part.type !== 'literal').map(part => [part.type, part.value]))
+  const localTimestamp = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second)
+  const offsetMinutes = Math.round((localTimestamp - date.getTime()) / 60000)
+  const sign = offsetMinutes >= 0 ? '+' : '-'
+  const absoluteOffset = Math.abs(offsetMinutes)
+  const offset = `${sign}${String(Math.floor(absoluteOffset / 60)).padStart(2, '0')}:${String(absoluteOffset % 60).padStart(2, '0')}`
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${offset}`
+}
+
+const encodeBase64Url = (value) => {
+  const bytes = new TextEncoder().encode(JSON.stringify(value))
+  let binary = ''
+  bytes.forEach(byte => { binary += String.fromCharCode(byte) })
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+}
+
+const decodeBase64Url = (value) => {
+  const base64 = value.replaceAll('-', '+').replaceAll('_', '/')
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
+  const binary = atob(padded)
+  const bytes = Uint8Array.from(binary, character => character.charCodeAt(0))
+  return JSON.parse(new TextDecoder().decode(bytes))
+}
+
 export default {
   name: 'Billing',
   data() {
     return {
       months: [createMonth()],
       isCalculating: false,
+      linkCopied: false,
     }
+  },
+  mounted() {
+    this.loadFromUrl()
   },
   computed: {
     ...mapState(useMain, {
@@ -229,8 +300,59 @@ export default {
     removeMonth(index) {
       this.months.splice(index, 1)
     },
+    loadFromUrl() {
+      const encodedState = new URLSearchParams(window.location.search).get('q')
+      if (!encodedState) return
+      try {
+        const state = decodeBase64Url(encodedState)
+        if (!Array.isArray(state.months) || !state.months.length) return
+        const loadedMonths = state.months
+          .filter(item => /^\d{4}-\d{2}$/.test(item?.month))
+          .map(item => {
+            const month = createMonth(item.month)
+            month.sales.consumption = this.urlNumber(item.sales?.consumption, month.sales.consumption)
+            month.sales.monthlyFee = this.urlNumber(item.sales?.monthlyFee, month.sales.monthlyFee)
+            month.sales.cost = this.urlNumber(item.sales?.cost, month.sales.cost)
+            month.transfer.monthlyFee = this.urlNumber(item.transfer?.monthlyFee, month.transfer.monthlyFee)
+            month.transfer.cost = this.urlNumber(item.transfer?.cost, month.transfer.cost)
+            month.tax.cost = this.urlNumber(item.tax?.cost, month.tax.cost)
+            return month
+          })
+        if (loadedMonths.length) this.months = loadedMonths
+      } catch {}
+    },
+    urlNumber(value, fallback) {
+      const number = Number(value)
+      return Number.isFinite(number) && number >= 0 ? number : fallback
+    },
+    linkState() {
+      return {
+        version: 1,
+        months: this.months.map(month => ({
+          month: month.month,
+          sales: {
+            consumption: Number(month.sales.consumption) || 0,
+            monthlyFee: Number(month.sales.monthlyFee) || 0,
+            cost: Number(month.sales.cost) || 0,
+          },
+          transfer: {
+            monthlyFee: Number(month.transfer.monthlyFee) || 0,
+            cost: Number(month.transfer.cost) || 0,
+          },
+          tax: { cost: Number(month.tax.cost) || 0 },
+        })),
+      }
+    },
+    async copyLink() {
+      const url = new URL(window.location.href)
+      url.search = ''
+      url.searchParams.set('q', encodeBase64Url(this.linkState()))
+      await navigator.clipboard.writeText(url.toString())
+      this.linkCopied = true
+      window.setTimeout(() => { this.linkCopied = false }, 2000)
+    },
     updateMonthDates(month) {
-      Object.assign(month, monthBounds(month.month), { meters: [], residents: [] })
+      Object.assign(month, monthBounds(month.month), { meters: [], residents: [], exportRows: [] })
     },
     salesCost(month) {
       return Number(month.sales.cost || 0) + Number(month.sales.monthlyFee || 0)
@@ -277,6 +399,28 @@ export default {
     formatEndDate(value) {
       return this.formatDate(new Date(value.getTime() - 1))
     },
+    exportCsv(month) {
+      const headers = ['timestamp', 'spotPrice_c_per_kWh', ...meterIds.flatMap((id, index) => [
+        `meterId${index + 1}_total_kWh`,
+        `meterId${index + 1}_delta_kWh`,
+      ])]
+      const rows = month.exportRows.map(row => [
+        row.timestamp,
+        row.spotPrice,
+        ...meterIds.flatMap(id => [row.meters[id]?.total ?? '', row.meters[id]?.delta ?? '']),
+      ])
+      const csv = [headers, ...rows].map(row => row.map(csvEscape).join(';')).join('\r\n')
+      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `billing-${month.month}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+    },
+    exportPdf() {
+      window.print()
+    },
     async calculate() {
       if (!this.months.length) return
       this.isCalculating = true
@@ -290,9 +434,14 @@ export default {
           const spotPrices = await prices.load(month.start, month.end)
           const priceByTimestamp = new Map(spotPrices.map(price => [new Date(price.start).getTime(), Number(price.priceCents)]))
           const meterTotals = {}
+          const readingsByMeter = Object.fromEntries(meterIds.map(id => [id, new Map()]))
           measurements.forEach((reading) => {
             const current = Number(reading.total_kwh)
             const previous = meterTotals[reading.id]
+            const timestamp = new Date(reading.timestamp).getTime()
+            if (readingsByMeter[reading.id]) {
+              readingsByMeter[reading.id].set(timestamp, current)
+            }
             if (previous) {
               const delta = Math.max(0, current - previous.value)
               const price = priceByTimestamp.get(new Date(previous.timestamp).getTime()) || 0
@@ -305,6 +454,22 @@ export default {
             previous.value = current
             previous.timestamp = reading.timestamp
           })
+          const exportTimestamps = [...new Set(measurements
+            .map(reading => new Date(reading.timestamp).getTime())
+            .filter(timestamp => timestamp >= month.start.getTime() && timestamp < month.end.getTime()))].sort((a, b) => a - b)
+          month.exportRows = exportTimestamps.map(timestamp => ({
+            timestamp: finnishIsoString(timestamp),
+            spotPrice: priceByTimestamp.get(timestamp) || 0,
+            meters: Object.fromEntries(meterIds.map(id => {
+              const readings = readingsByMeter[id]
+              const total = readings.get(timestamp)
+              const next = readings.get(timestamp + quarterHour)
+              return [id, {
+                total: total ?? '',
+                delta: total === undefined || next === undefined ? 0 : Math.max(0, next - total),
+              }]
+            })),
+          }))
           const meterResults = Object.entries(meterTotals).map(([id, meter]) => ({
             id,
             consumption: meter.consumption,
@@ -395,14 +560,39 @@ input.user-input { border-color: #22a06b; box-shadow: 0 0 0 1px rgb(34 160 107 /
 .common-summary { display: flex; align-items: baseline; gap: .5rem; border-top: 1px solid #d1d5db; margin-top: 1rem; padding-top: .7rem; font-size: .8rem; }
 .common-summary span { color: #374151; }
 .common-summary small { color: #6b7280; }
-.billing-footer { border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 1rem; align-items: end; }
+.billing-footer { border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 1rem; align-items: end; display: grid; grid-template-columns: 1fr auto 1fr; }
+.calculate-action { justify-self: center; }
+.export-actions { display: flex; justify-self: end; gap: .5rem; }
 .totals { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-size: .85rem; }
 .grand-total { color: #111827; }
 .empty-state { padding: 2rem 0; color: #6b7280; }
 @media (max-width: 700px) {
   .date-range { flex-direction: column; gap: .2rem; }
-  .billing-footer { align-items: stretch; flex-direction: column; }
+  .billing-footer { align-items: stretch; display: flex; flex-direction: column; }
+  .calculate-action, .export-actions { width: 100%; justify-content: stretch; }
+  .calculate-action > *, .export-actions > * { flex: 1; }
   .resident-cards { grid-template-columns: 1fr; }
   .resident-bill-summary { grid-template-columns: 1fr; }
+}
+@media print {
+  @page { size: A4; margin: 12mm; }
+  :global(html), :global(body), :global(#__nuxt) { height: auto; background: white; }
+  :global(.layout-container) { min-height: 0; height: auto; }
+  :global(.navigation), :global(.user-indicator), :global(.build-date), .no-print { display: none !important; }
+  :global(.page-content) { display: block !important; height: auto !important; padding: 0 !important; }
+  .billing-card { width: 100%; max-height: none; overflow: visible; box-shadow: none; border: 0; font-size: .75rem; }
+  .billing-header { margin-bottom: .5rem; }
+  .month-controls { margin-bottom: .5rem; padding-bottom: .25rem; }
+  .month-heading { gap: .5rem; padding: 0; }
+  .date-range { gap: .5rem; }
+  .charge-table { overflow: visible; }
+  .charge-table-row { grid-template-columns: minmax(5rem, .8fr) repeat(4, minmax(0, 1fr)); min-width: 0; gap: .35rem; padding: .2rem 0; }
+  .charge-table-row input { min-width: 0; padding: .25rem; }
+  .charge-section { padding: .35rem 0 .5rem; break-inside: auto; }
+  .charge-section h2 { margin-bottom: .15rem; }
+  .section-total { margin-top: .2rem; padding-top: .3rem; }
+  .meter-breakdown, .resident-bill-summary { break-inside: avoid; }
+  .meter-breakdown { background: white; }
+  input, input:read-only { border: 0; background: transparent; color: #111827; }
 }
 </style>
